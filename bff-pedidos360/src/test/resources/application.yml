@@ -1,0 +1,13 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/test/v2.0
+          audiences: api://test
+
+pedidos360:
+  services:
+    productos-url: http://localhost:8081
+    clientes-url: http://localhost:8082
+    pedidos-url: http://localhost:8083

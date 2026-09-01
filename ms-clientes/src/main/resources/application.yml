@@ -1,0 +1,31 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: ms-clientes
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pedidos360}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0
+          audiences: ${AZURE_API_AUDIENCE:api://pedidos360}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+pedidos360:
+  security:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}

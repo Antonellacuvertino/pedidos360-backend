@@ -1,0 +1,20 @@
+[Unit]
+Description=Pedidos360 ms-pedidos
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/opt/pedidos360/backend
+Environment=AZURE_TENANT_ID=REEMPLAZAR_TENANT_ID
+Environment=AZURE_API_AUDIENCE=api://REEMPLAZAR_CLIENT_ID
+Environment=DB_HOST=REEMPLAZAR_RDS_ENDPOINT
+Environment=DB_PORT=5432
+Environment=DB_NAME=pedidos360
+Environment=DB_USER=postgres
+Environment=DB_PASSWORD=REEMPLAZAR_PASSWORD
+ExecStart=/usr/bin/java -jar /opt/pedidos360/backend/ms-pedidos/target/ms-pedidos-0.0.1-SNAPSHOT.jar
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

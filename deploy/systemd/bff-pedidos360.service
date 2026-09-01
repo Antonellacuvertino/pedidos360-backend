@@ -1,0 +1,19 @@
+[Unit]
+Description=Pedidos360 BFF
+After=network.target ms-productos.service ms-clientes.service ms-pedidos.service
+
+[Service]
+User=ec2-user
+WorkingDirectory=/opt/pedidos360/backend
+Environment=AZURE_TENANT_ID=REEMPLAZAR_TENANT_ID
+Environment=AZURE_API_AUDIENCE=api://REEMPLAZAR_CLIENT_ID
+Environment=PRODUCTOS_URL=http://localhost:8081
+Environment=CLIENTES_URL=http://localhost:8082
+Environment=PEDIDOS_URL=http://localhost:8083
+Environment=CORS_ALLOWED_ORIGINS=https://REEMPLAZAR_URL_FRONTEND
+ExecStart=/usr/bin/java -jar /opt/pedidos360/backend/bff-pedidos360/target/bff-pedidos360-0.0.1-SNAPSHOT.jar
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

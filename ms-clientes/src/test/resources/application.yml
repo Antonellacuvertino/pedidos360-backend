@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:clientes;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/test/v2.0
+          audiences: api://test

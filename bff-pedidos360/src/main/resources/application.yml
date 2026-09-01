@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bff-pedidos360
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0
+          audiences: ${AZURE_API_AUDIENCE:api://pedidos360}
+
+pedidos360:
+  security:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  services:
+    productos-url: ${PRODUCTOS_URL:http://localhost:8081}
+    clientes-url: ${CLIENTES_URL:http://localhost:8082}
+    pedidos-url: ${PEDIDOS_URL:http://localhost:8083}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
