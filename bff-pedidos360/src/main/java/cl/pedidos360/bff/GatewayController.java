@@ -3,10 +3,13 @@ package cl.pedidos360.bff;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -15,11 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
 
 import cl.pedidos360.bff.model.ClienteDto;
+import cl.pedidos360.bff.model.EmailRequest;
 import cl.pedidos360.bff.model.NuevoClienteRequest;
 import cl.pedidos360.bff.model.NuevoPedidoRequest;
 import cl.pedidos360.bff.model.NuevoProductoRequest;
 import cl.pedidos360.bff.model.PedidoDto;
+import cl.pedidos360.bff.model.PedidoAceptadoDto;
 import cl.pedidos360.bff.model.ProductoDto;
+import cl.pedidos360.bff.model.RabbitQueueRequest;
 import cl.pedidos360.bff.model.ResumenDto;
 import jakarta.validation.Valid;
 
@@ -40,7 +46,7 @@ public class GatewayController {
     }
 
     @PostMapping("/productos")
-    @PreAuthorize("hasAuthority('SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
     public ProductoDto crearProducto(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody NuevoProductoRequest request) {
@@ -58,7 +64,7 @@ public class GatewayController {
     }
 
     @PostMapping("/clientes")
-    @PreAuthorize("hasAuthority('SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public ClienteDto crearCliente(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody NuevoClienteRequest request) {
@@ -76,8 +82,8 @@ public class GatewayController {
     }
 
     @PostMapping("/pedidos")
-    @PreAuthorize("hasAuthority('SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
-    public PedidoDto crearPedido(
+    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    public PedidoAceptadoDto crearPedido(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody NuevoPedidoRequest request) {
         return restClient.post()
@@ -85,7 +91,67 @@ public class GatewayController {
                 .header(HttpHeaders.AUTHORIZATION, authorization)
                 .body(request)
                 .retrieve()
-                .body(PedidoDto.class);
+                .body(PedidoAceptadoDto.class);
+    }
+
+    @PostMapping("/notificaciones/prueba")
+    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    public Map<?, ?> probarNotificacion(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @Valid @RequestBody EmailRequest request) {
+        return restClient.post()
+                .uri(serviceUrls.notificationsUrl() + "/api/email/enviar")
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .body(request)
+                .retrieve()
+                .body(Map.class);
+    }
+
+    @GetMapping("/rabbitmq/queues")
+    public List<Map<String, Object>> listarColas(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        Map<String, Object>[] response = restClient.get()
+                .uri(serviceUrls.rabbitAdminUrl() + "/api/rabbitmq/queues")
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .retrieve()
+                .body(Map[].class);
+        return response == null ? List.of() : Arrays.asList(response);
+    }
+
+    @PostMapping("/rabbitmq/queues")
+    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    public Map<?, ?> crearCola(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @Valid @RequestBody RabbitQueueRequest request) {
+        return restClient.post()
+                .uri(serviceUrls.rabbitAdminUrl() + "/api/rabbitmq/queues")
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .body(request)
+                .retrieve()
+                .body(Map.class);
+    }
+
+    @DeleteMapping("/rabbitmq/queues/{name}")
+    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    public Map<?, ?> eliminarCola(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @PathVariable String name) {
+        return restClient.delete()
+                .uri(serviceUrls.rabbitAdminUrl() + "/api/rabbitmq/queues/{name}", name)
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .retrieve()
+                .body(Map.class);
+    }
+
+    @GetMapping("/auditoria")
+    public List<Map<String, Object>> auditoria(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        Map<String, Object>[] response = restClient.get()
+                .uri(serviceUrls.auditoriaUrl() + "/auditoria")
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .retrieve()
+                .body(Map[].class);
+        return response == null ? List.of() : Arrays.asList(response);
     }
 
     @GetMapping("/resumen")

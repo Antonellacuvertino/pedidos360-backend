@@ -1,0 +1,200 @@
+x-app-environment: &app-environment
+  AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+  AZURE_API_AUDIENCE: ${AZURE_API_AUDIENCE}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_NAME: ${DB_NAME:-pedidos360}
+  DB_USER: ${DB_USER:-pedidos360}
+  DB_PASSWORD: ${DB_PASSWORD:-pedidos360_dev}
+  RABBITMQ_ADDRESSES: rabbitmq-1:5672,rabbitmq-2:5672
+  RABBITMQ_USER: ${RABBITMQ_USER:-pedidos360}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-pedidos360_dev}
+
+x-app-dependencies: &app-dependencies
+  postgres:
+    condition: service_healthy
+  rabbitmq-1:
+    condition: service_healthy
+  rabbitmq-2:
+    condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pedidos360}
+      POSTGRES_USER: ${DB_USER:-pedidos360}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pedidos360_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pedidos360} -d ${DB_NAME:-pedidos360}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  rabbitmq-1:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq-1
+    environment:
+      RABBITMQ_NODENAME: rabbit@rabbitmq-1
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-pedidos360_cluster_cookie}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-pedidos360}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-pedidos360_dev}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-1-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  rabbitmq-2:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq-2
+    environment:
+      RABBITMQ_NODENAME: rabbit@rabbitmq-2
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-pedidos360_cluster_cookie}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-pedidos360}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-pedidos360_dev}
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq-2-data:/var/lib/rabbitmq
+    depends_on:
+      rabbitmq-1:
+        condition: service_healthy
+    command: >-
+      bash -c "rabbitmq-server -detached &&
+      rabbitmqctl await_startup &&
+      rabbitmqctl stop_app &&
+      rabbitmqctl reset &&
+      rabbitmqctl join_cluster rabbit@rabbitmq-1 &&
+      rabbitmqctl start_app &&
+      tail -f /dev/null"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  ms-productos:
+    build:
+      context: .
+      dockerfile: ms-productos/Dockerfile
+    environment: *app-environment
+    ports: ["8081:8081"]
+    depends_on: *app-dependencies
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  ms-clientes:
+    build:
+      context: .
+      dockerfile: ms-clientes/Dockerfile
+    environment: *app-environment
+    ports: ["8082:8082"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  ms-pedidos:
+    build:
+      context: .
+      dockerfile: ms-pedidos/Dockerfile
+    environment: *app-environment
+    ports: ["8083:8083"]
+    depends_on: *app-dependencies
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: notifications-service/Dockerfile
+    environment:
+      <<: *app-environment
+      SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      NOTIFICATION_TO: ${NOTIFICATION_TO:-}
+    ports: ["8084:8084"]
+    depends_on: *app-dependencies
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  rabbit-admin-service:
+    build:
+      context: .
+      dockerfile: rabbit-admin-service/Dockerfile
+    environment: *app-environment
+    ports: ["8085:8085"]
+    depends_on: *app-dependencies
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  ms-auditoria:
+    build:
+      context: .
+      dockerfile: ms-auditoria/Dockerfile
+    environment: *app-environment
+    ports: ["8086:8086"]
+    depends_on: *app-dependencies
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  bff-pedidos360:
+    build:
+      context: .
+      dockerfile: bff-pedidos360/Dockerfile
+    environment:
+      <<: *app-environment
+      PRODUCTOS_URL: http://ms-productos:8081
+      CLIENTES_URL: http://ms-clientes:8082
+      PEDIDOS_URL: http://ms-pedidos:8083
+      NOTIFICATIONS_URL: http://notifications-service:8084
+      RABBIT_ADMIN_URL: http://rabbit-admin-service:8085
+      AUDITORIA_URL: http://ms-auditoria:8086
+    ports: ["8080:8080"]
+    depends_on:
+      ms-productos:
+        condition: service_started
+      ms-clientes:
+        condition: service_started
+      ms-pedidos:
+        condition: service_started
+      notifications-service:
+        condition: service_started
+      rabbit-admin-service:
+        condition: service_started
+      ms-auditoria:
+        condition: service_started
+    restart: unless-stopped
+    networks: [pedidos360]
+
+volumes:
+  postgres-data:
+  rabbitmq-1-data:
+  rabbitmq-2-data:
+
+networks:
+  pedidos360:
+    driver: bridge

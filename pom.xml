@@ -17,9 +17,13 @@
 
     <modules>
         <module>common-security</module>
+        <module>common-messaging</module>
         <module>ms-productos</module>
         <module>ms-clientes</module>
         <module>ms-pedidos</module>
+        <module>notifications-service</module>
+        <module>rabbit-admin-service</module>
+        <module>ms-auditoria</module>
         <module>bff-pedidos360</module>
     </modules>
 

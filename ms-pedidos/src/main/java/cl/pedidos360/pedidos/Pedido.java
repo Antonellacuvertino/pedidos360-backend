@@ -2,7 +2,9 @@ package cl.pedidos360.pedidos;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -18,6 +20,9 @@ public class Pedido {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true)
+    private UUID eventoId;
 
     @NotNull
     private Long clienteId;
@@ -40,6 +45,11 @@ public class Pedido {
     }
 
     public Pedido(Long clienteId, Long productoId, int cantidad, BigDecimal total, EstadoPedido estado) {
+        this(UUID.randomUUID(), clienteId, productoId, cantidad, total, estado);
+    }
+
+    public Pedido(UUID eventoId, Long clienteId, Long productoId, int cantidad, BigDecimal total, EstadoPedido estado) {
+        this.eventoId = eventoId;
         this.clienteId = clienteId;
         this.productoId = productoId;
         this.cantidad = cantidad;
@@ -50,6 +60,10 @@ public class Pedido {
 
     public Long getId() {
         return id;
+    }
+
+    public UUID getEventoId() {
+        return eventoId;
     }
 
     public Long getClienteId() {
@@ -98,6 +112,9 @@ public class Pedido {
 
     @PrePersist
     void antesDeGuardar() {
+        if (eventoId == null) {
+            eventoId = UUID.randomUUID();
+        }
         if (fechaCreacion == null) {
             fechaCreacion = LocalDateTime.now();
         }

@@ -1,5 +1,7 @@
 target/
+target_test-classes/
 *.log
 application-local.yml
+.env
 .idea/
 *.iml

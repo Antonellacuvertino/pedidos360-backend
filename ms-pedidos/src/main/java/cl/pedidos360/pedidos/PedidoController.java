@@ -2,6 +2,8 @@ package cl.pedidos360.pedidos;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,9 +17,11 @@ import jakarta.validation.Valid;
 @RequestMapping("/pedidos")
 public class PedidoController {
     private final PedidoRepository repository;
+    private final PedidoPublisher publisher;
 
-    public PedidoController(PedidoRepository repository) {
+    public PedidoController(PedidoRepository repository, PedidoPublisher publisher) {
         this.repository = repository;
+        this.publisher = publisher;
     }
 
     @GetMapping
@@ -26,8 +30,9 @@ public class PedidoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
-    public Pedido crear(@Valid @RequestBody Pedido pedido) {
-        return repository.save(pedido);
+    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    public ResponseEntity<PedidoAceptado> crear(@Valid @RequestBody NuevoPedidoRequest request) {
+        PedidoAceptado respuesta = publisher.publicar(request);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(respuesta);
     }
 }
