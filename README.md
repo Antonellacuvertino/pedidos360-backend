@@ -2,6 +2,32 @@
 
 Backend multi-modulo construido con Java 21 y Spring Boot. Incluye seguridad JWT con Microsoft Entra ID, procesamiento asincrono con RabbitMQ, PostgreSQL y despliegue por contenedores.
 
+## Despliegue cloud actual
+
+Recursos creados el 4 de octubre de 2026 en `us-east-1`:
+
+| Recurso | Identificador o URL |
+| --- | --- |
+| Frontend Angular | `https://main.d1ipad4fvqyxdz.amplifyapp.com` |
+| AWS Amplify | `d1ipad4fvqyxdz` |
+| API Gateway | `https://2iguro8kei.execute-api.us-east-1.amazonaws.com` |
+| HTTP API | `2iguro8kei` |
+| EC2 | `i-0fa2cb315c7d87354` |
+| IP elastica EC2 | `100.48.142.195` |
+| RabbitMQ nodo 1 | `http://100.48.142.195:15672` |
+| RabbitMQ nodo 2 | `http://100.48.142.195:15673` |
+
+El grupo `pedidos360-ec2-sg` restringe SSH y los paneles RabbitMQ a la IP del estudiante. El puerto `8080` recibe la integracion HTTP de API Gateway. Los puertos internos de los microservicios no estan habilitados en el grupo de seguridad.
+
+Pruebas rapidas del gateway:
+
+```bash
+curl https://2iguro8kei.execute-api.us-east-1.amazonaws.com/api/v1/public
+curl -i https://2iguro8kei.execute-api.us-east-1.amazonaws.com/api/v1/productos
+```
+
+La primera llamada responde `200`; la segunda responde `401` si no se envia un JWT. No se documentan secretos ni credenciales en el repositorio.
+
 ## Arquitectura
 
 ```text
