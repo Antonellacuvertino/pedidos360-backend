@@ -16,6 +16,8 @@ Recursos creados el 4 de octubre de 2026 en `us-east-1`:
 | IP elastica EC2 | `100.48.142.195` |
 | RabbitMQ nodo 1 | `http://100.48.142.195:15672` |
 | RabbitMQ nodo 2 | `http://100.48.142.195:15673` |
+| Entra tenant | `e5372bf0-c5e3-4286-887c-79069f209c1f` |
+| Entra API client ID | `7d7e6f82-35dc-4fd2-b580-7776c558d963` |
 
 El grupo `pedidos360-ec2-sg` restringe SSH y los paneles RabbitMQ a la IP del estudiante. El puerto `8080` recibe la integracion HTTP de API Gateway. Los puertos internos de los microservicios no estan habilitados en el grupo de seguridad.
 
@@ -104,7 +106,7 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 - El BFF y los microservicios vuelven a validar firma, issuer, audience y expiracion.
 - Los scopes del claim `scp` se convierten a `SCOPE_*`.
 - Los roles del claim `roles` se convierten a `ROLE_*`.
-- Escrituras autorizadas con scopes `write`/`write-read` o roles `Pedidos.Admin` y `Pedidos.Operador`.
+- Escrituras autorizadas con el scope `pedidos.write` o roles `Pedidos.Admin` y `Pedidos.Operador`. Se mantienen los scopes anteriores para compatibilidad.
 - No se guardan contrasenas, tokens ni archivos `.env` en Git.
 
 ## Configuracion

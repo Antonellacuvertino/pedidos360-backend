@@ -20,7 +20,7 @@ public class NotificationController {
     }
 
     @PostMapping("/enviar")
-    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.write', 'SCOPE_write', 'SCOPE_write-read') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public ResponseEntity<NotificationAccepted> enviar(@Valid @RequestBody EmailRequest request) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(publisher.publicar(request));
     }

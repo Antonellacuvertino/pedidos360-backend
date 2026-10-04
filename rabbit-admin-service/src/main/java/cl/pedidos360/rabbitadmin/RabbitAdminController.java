@@ -32,13 +32,13 @@ public class RabbitAdminController {
 
     @PostMapping("/queues")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.write', 'SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
     public ResourceResponse crearCola(@Valid @RequestBody QueueRequest request) {
         return service.crearCola(request);
     }
 
     @DeleteMapping("/queues/{name}")
-    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.write', 'SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
     public ResourceResponse eliminarCola(
             @PathVariable
             @Pattern(regexp = "^[a-z0-9][a-z0-9._-]{2,79}$") String name) {
@@ -47,26 +47,26 @@ public class RabbitAdminController {
 
     @PostMapping("/exchanges")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.write', 'SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
     public ResourceResponse crearExchange(@Valid @RequestBody ExchangeRequest request) {
         return service.crearExchange(request);
     }
 
     @DeleteMapping("/exchanges/{name}")
-    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.write', 'SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
     public ResourceResponse eliminarExchange(@PathVariable String name) {
         return service.eliminarExchange(name);
     }
 
     @PostMapping("/bindings")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.write', 'SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
     public ResourceResponse crearBinding(@Valid @RequestBody BindingRequest request) {
         return service.crearBinding(request);
     }
 
     @DeleteMapping("/bindings")
-    @PreAuthorize("hasAnyAuthority('SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.write', 'SCOPE_write', 'SCOPE_write-read') or hasRole('Pedidos.Admin')")
     public ResourceResponse eliminarBinding(@Valid @RequestBody BindingRequest request) {
         return service.eliminarBinding(request);
     }
