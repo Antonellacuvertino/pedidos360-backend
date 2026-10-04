@@ -46,7 +46,6 @@ public class JwtSecurityConfig {
     }
 
     @Bean
-    @ConditionalOnMissingBean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(",")).map(String::trim).toList());
