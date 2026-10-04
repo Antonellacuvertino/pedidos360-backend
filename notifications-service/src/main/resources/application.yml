@@ -36,6 +36,9 @@ pedidos360:
     from: ${SMTP_FROM:${SMTP_USERNAME:}}
 
 management:
+  health:
+    mail:
+      enabled: ${SMTP_ENABLED:false}
   endpoints:
     web:
       exposure:
