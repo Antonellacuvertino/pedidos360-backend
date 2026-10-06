@@ -30,7 +30,7 @@ Los client ID no son secretos. No guardar client secrets, contrasenas, access to
 
 1. Crear `Pedidos360 Frontend`.
 2. En Authentication agregar plataforma Single-page application.
-3. Agregar `http://localhost:4200` y la URL HTTPS final.
+3. Agregar `http://localhost:4200` y `https://100-48-142-195.sslip.io` como URI de la SPA.
 4. En API permissions agregar los scopes de `Pedidos360 API`.
 5. Conceder consentimiento si la cuenta tiene permisos.
 
@@ -91,7 +91,7 @@ POST /api/v1/pedidos con token y scope pedidos.escribe -> 202
 
 ## 4. Frontend HTTPS
 
-El redirect URI de una SPA desplegada debe usar HTTPS. Se puede publicar el `dist` de Angular en S3 + CloudFront o usar otro hosting estatico HTTPS.
+El frontend se sirve desde la misma instancia EC2 en un contenedor Caddy independiente. Caddy entrega Angular por HTTPS y conserva el certificado en volumenes Docker. La IP elastica debe resolver mediante `100-48-142-195.sslip.io` y el security group debe permitir 80/443.
 
 Antes de compilar, completar `environment.prod.ts`:
 
@@ -106,14 +106,16 @@ azure: {
 }
 ```
 
-Compilar:
+En EC2, clonar el repositorio del frontend y ejecutar:
 
 ```bash
-npm ci
-npm run build
+git clone https://github.com/Antonellacuvertino/pedidos360-frontend.git
+cd pedidos360-frontend
+docker compose up -d --build
+docker compose ps
 ```
 
-Despues de obtener la URL final, agregarla tambien como redirect URI en Entra ID y como origen CORS en API Gateway/backend.
+Agregar el origen HTTPS como redirect URI SPA en Entra ID y como origen CORS en API Gateway/backend. El navegador debe llamar solo al API Gateway, no a los puertos de los microservicios.
 
 ## 5. Actualizar el despliegue
 
@@ -130,6 +132,7 @@ docker compose logs --tail=100 ms-pedidos notifications-service ms-productos
 | --- | --- |
 | Login no abre | `clientId`, tenant y redirect URI de tipo SPA. |
 | `AADSTS50011` | Redirect URI no coincide exactamente. |
+| Dashboard abre pero no aparece token | Confirmar `pedidos.read` y `pedidos.escribe` en Permisos de API de la SPA, otorgar consentimiento y volver a iniciar sesion. Mostrar el codigo de error de Mi cuenta. |
 | API Gateway responde 401 | Comparar `iss` y `aud` reales con el authorizer. |
 | Backend responde 401 | Comparar `AZURE_TENANT_ID` y `AZURE_API_AUDIENCE`. |
 | Backend responde 403 | Falta scope `pedidos.escribe` o rol requerido. |
