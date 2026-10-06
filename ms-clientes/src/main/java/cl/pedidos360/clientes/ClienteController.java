@@ -26,7 +26,7 @@ public class ClienteController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public Cliente crear(@Valid @RequestBody Cliente cliente) {
         return repository.save(cliente);
     }

@@ -47,7 +47,7 @@ public class GatewayController {
     }
 
     @PostMapping("/productos")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasRole('Pedidos.Admin')")
     public ProductoDto crearProducto(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody NuevoProductoRequest request) {
@@ -65,7 +65,7 @@ public class GatewayController {
     }
 
     @PostMapping("/clientes")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public ClienteDto crearCliente(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody NuevoClienteRequest request) {
@@ -83,7 +83,7 @@ public class GatewayController {
     }
 
     @PostMapping("/pedidos")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public ResponseEntity<PedidoAceptadoDto> crearPedido(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody NuevoPedidoRequest request) {
@@ -97,7 +97,7 @@ public class GatewayController {
     }
 
     @PostMapping("/notificaciones/prueba")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public Map<?, ?> probarNotificacion(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody EmailRequest request) {
@@ -121,7 +121,7 @@ public class GatewayController {
     }
 
     @PostMapping("/rabbitmq/queues")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasRole('Pedidos.Admin')")
     public Map<?, ?> crearCola(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody RabbitQueueRequest request) {
@@ -134,7 +134,7 @@ public class GatewayController {
     }
 
     @DeleteMapping("/rabbitmq/queues/{name}")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasRole('Pedidos.Admin')")
     public Map<?, ?> eliminarCola(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @PathVariable String name) {

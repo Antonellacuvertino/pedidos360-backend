@@ -30,7 +30,7 @@ public class PedidoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public ResponseEntity<PedidoAceptado> crear(@Valid @RequestBody NuevoPedidoRequest request) {
         PedidoAceptado respuesta = publisher.publicar(request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(respuesta);

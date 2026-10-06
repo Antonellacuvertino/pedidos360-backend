@@ -26,7 +26,7 @@ public class ProductoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasRole('Pedidos.Admin')")
     public Producto crear(@Valid @RequestBody Producto producto) {
         return repository.save(producto);
     }

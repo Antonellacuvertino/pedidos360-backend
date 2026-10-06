@@ -6,7 +6,7 @@
 AZURE_TENANT_ID=
 AZURE_SPA_CLIENT_ID=
 AZURE_API_CLIENT_ID=
-AZURE_API_SCOPE=api://AZURE_API_CLIENT_ID/pedidos.escribe
+AZURE_API_SCOPE=api://AZURE_API_CLIENT_ID/pedidos.write
 AZURE_API_AUDIENCE=valor exacto del claim aud
 AWS_REGION=us-east-1
 EC2_PUBLIC_IP=
@@ -23,7 +23,7 @@ Los client ID no son secretos. No guardar client secrets, contrasenas, access to
 1. Entra ID > App registrations > New registration.
 2. Nombre: `Pedidos360 API`.
 3. En `Expose an API`, definir el Application ID URI.
-4. Crear scopes delegados `pedidos.read` y `pedidos.escribe`.
+4. Crear scopes delegados `pedidos.read` y `pedidos.write`.
 5. Opcional: crear roles `Pedidos.Admin` y `Pedidos.Operador`.
 
 ### Registrar la SPA
@@ -86,7 +86,7 @@ Pruebas minimas:
 ```text
 GET /api/v1 sin token -> 401
 GET /api/v1 con token valido -> 200
-POST /api/v1/pedidos con token y scope pedidos.escribe -> 202
+POST /api/v1/pedidos con token y scope pedidos.write -> 202
 ```
 
 ## 4. Frontend HTTPS
@@ -102,7 +102,7 @@ azure: {
   tenantId: 'TENANT_ID',
   redirectUri: 'https://FRONTEND_HTTPS_URL',
   authority: 'https://login.microsoftonline.com/TENANT_ID',
-  apiScopes: ['api://API_CLIENT_ID/pedidos.read', 'api://API_CLIENT_ID/pedidos.escribe']
+  apiScopes: ['api://API_CLIENT_ID/pedidos.read', 'api://API_CLIENT_ID/pedidos.write']
 }
 ```
 
@@ -132,10 +132,11 @@ docker compose logs --tail=100 ms-pedidos notifications-service ms-productos
 | --- | --- |
 | Login no abre | `clientId`, tenant y redirect URI de tipo SPA. |
 | `AADSTS50011` | Redirect URI no coincide exactamente. |
-| Dashboard abre pero no aparece token | Confirmar `pedidos.read` y `pedidos.escribe` en Permisos de API de la SPA, otorgar consentimiento y volver a iniciar sesion. Mostrar el codigo de error de Mi cuenta. |
+| `AADSTS650053` | El scope solicitado no existe. Copiar el valor tecnico desde **Exponer una API** con la traduccion del navegador desactivada; una etiqueta traducida no cambia el nombre real del permiso. |
+| Dashboard abre pero no aparece token | Confirmar `pedidos.read` y `pedidos.write` en Permisos de API de la SPA, otorgar consentimiento y volver a iniciar sesion. Mostrar el codigo de error de Mi cuenta. |
 | API Gateway responde 401 | Comparar `iss` y `aud` reales con el authorizer. |
 | Backend responde 401 | Comparar `AZURE_TENANT_ID` y `AZURE_API_AUDIENCE`. |
-| Backend responde 403 | Falta scope `pedidos.escribe` o rol requerido. |
+| Backend responde 403 | Falta scope `pedidos.write` o rol requerido. |
 | No baja stock | Revisar `stock.queue`, logs de `ms-productos` y `stock.dlq`. |
 | No llega correo | Revisar SMTP o logs de simulacion en `notifications-service`. |
 | Nodo 2 no aparece | Revisar cookie, DNS de contenedores y logs de `rabbitmq-2`. |

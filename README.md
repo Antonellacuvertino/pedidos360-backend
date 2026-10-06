@@ -106,7 +106,7 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 - El BFF y los microservicios vuelven a validar firma, issuer, audience y expiracion.
 - Los scopes del claim `scp` se convierten a `SCOPE_*`.
 - Los roles del claim `roles` se convierten a `ROLE_*`.
-- Escrituras autorizadas con el scope `pedidos.escribe` o roles `Pedidos.Admin` y `Pedidos.Operador`.
+- Escrituras autorizadas con el scope `pedidos.write` o roles `Pedidos.Admin` y `Pedidos.Operador`.
 - No se guardan contrasenas, tokens ni archivos `.env` en Git.
 
 ## Configuracion

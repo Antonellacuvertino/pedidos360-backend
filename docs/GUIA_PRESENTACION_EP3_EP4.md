@@ -22,7 +22,7 @@ Esta guia sigue las pautas oficiales entregadas para Pedidos360. La demostracion
 | Client ID frontend | `ad02ca6f-9972-496e-837c-98c92a43220e` |
 | Client ID API | `7d7e6f82-35dc-4fd2-b580-7776c558d963` |
 | Audience | `api://7d7e6f82-35dc-4fd2-b580-7776c558d963` |
-| Scopes | `pedidos.read`, `pedidos.escribe` |
+| Scopes | `pedidos.read`, `pedidos.write` |
 
 ## Guion de 8 minutos
 
@@ -39,7 +39,7 @@ En Microsoft Entra ID muestra:
 - Tenant.
 - Usuario de prueba.
 - Registro de la SPA y redirect URI HTTPS.
-- Registro de la API y scopes `pedidos.read` y `pedidos.escribe`.
+- Registro de la API y scopes `pedidos.read` y `pedidos.write`.
 
 En el frontend inicia sesion con Microsoft y abre `Mi cuenta` para mostrar el token decodificado. Explica `iss`, `aud`, `exp`, `scp` y `roles`.
 
