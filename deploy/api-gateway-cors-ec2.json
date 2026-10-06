@@ -1,0 +1,10 @@
+{
+  "AllowHeaders": ["authorization", "content-type"],
+  "AllowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  "AllowOrigins": [
+    "https://100-48-142-195.sslip.io",
+    "https://main.d1ipad4fvqyxdz.amplifyapp.com"
+  ],
+  "ExposeHeaders": ["content-type"],
+  "MaxAge": 3600
+}
