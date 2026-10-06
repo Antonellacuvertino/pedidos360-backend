@@ -6,7 +6,7 @@
 AZURE_TENANT_ID=
 AZURE_SPA_CLIENT_ID=
 AZURE_API_CLIENT_ID=
-AZURE_API_SCOPE=api://AZURE_API_CLIENT_ID/write
+AZURE_API_SCOPE=api://AZURE_API_CLIENT_ID/pedidos.escribe
 AZURE_API_AUDIENCE=valor exacto del claim aud
 AWS_REGION=us-east-1
 EC2_PUBLIC_IP=
@@ -23,7 +23,7 @@ Los client ID no son secretos. No guardar client secrets, contrasenas, access to
 1. Entra ID > App registrations > New registration.
 2. Nombre: `Pedidos360 API`.
 3. En `Expose an API`, definir el Application ID URI.
-4. Crear scopes delegados `read` y `write`.
+4. Crear scopes delegados `pedidos.read` y `pedidos.escribe`.
 5. Opcional: crear roles `Pedidos.Admin` y `Pedidos.Operador`.
 
 ### Registrar la SPA
@@ -86,7 +86,7 @@ Pruebas minimas:
 ```text
 GET /api/v1 sin token -> 401
 GET /api/v1 con token valido -> 200
-POST /api/v1/pedidos con token y scope write -> 202
+POST /api/v1/pedidos con token y scope pedidos.escribe -> 202
 ```
 
 ## 4. Frontend HTTPS
@@ -102,7 +102,7 @@ azure: {
   tenantId: 'TENANT_ID',
   redirectUri: 'https://FRONTEND_HTTPS_URL',
   authority: 'https://login.microsoftonline.com/TENANT_ID',
-  apiScopes: ['api://API_CLIENT_ID/read', 'api://API_CLIENT_ID/write']
+  apiScopes: ['api://API_CLIENT_ID/pedidos.read', 'api://API_CLIENT_ID/pedidos.escribe']
 }
 ```
 
@@ -132,7 +132,7 @@ docker compose logs --tail=100 ms-pedidos notifications-service ms-productos
 | `AADSTS50011` | Redirect URI no coincide exactamente. |
 | API Gateway responde 401 | Comparar `iss` y `aud` reales con el authorizer. |
 | Backend responde 401 | Comparar `AZURE_TENANT_ID` y `AZURE_API_AUDIENCE`. |
-| Backend responde 403 | Falta scope `write` o rol requerido. |
+| Backend responde 403 | Falta scope `pedidos.escribe` o rol requerido. |
 | No baja stock | Revisar `stock.queue`, logs de `ms-productos` y `stock.dlq`. |
 | No llega correo | Revisar SMTP o logs de simulacion en `notifications-service`. |
 | Nodo 2 no aparece | Revisar cookie, DNS de contenedores y logs de `rabbitmq-2`. |

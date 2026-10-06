@@ -16,13 +16,13 @@ Esta guia sigue las pautas oficiales entregadas para Pedidos360. La demostracion
 
 | Elemento | Valor |
 | --- | --- |
-| Frontend | `https://main.d1ipad4fvqyxdz.amplifyapp.com` |
+| Frontend en EC2 | `https://100-48-142-195.sslip.io` (comprobar HTTPS antes de presentar) |
 | API Gateway | `https://2iguro8kei.execute-api.us-east-1.amazonaws.com` |
 | Tenant ID | `e5372bf0-c5e3-4286-887c-79069f209c1f` |
 | Client ID frontend | `ad02ca6f-9972-496e-837c-98c92a43220e` |
 | Client ID API | `7d7e6f82-35dc-4fd2-b580-7776c558d963` |
 | Audience | `api://7d7e6f82-35dc-4fd2-b580-7776c558d963` |
-| Scopes | `pedidos.read`, `pedidos.write` |
+| Scopes | `pedidos.read`, `pedidos.escribe` |
 
 ## Guion de 8 minutos
 
@@ -39,7 +39,7 @@ En Microsoft Entra ID muestra:
 - Tenant.
 - Usuario de prueba.
 - Registro de la SPA y redirect URI HTTPS.
-- Registro de la API y scopes `pedidos.read` y `pedidos.write`.
+- Registro de la API y scopes `pedidos.read` y `pedidos.escribe`.
 
 En el frontend inicia sesion con Microsoft y abre `Mi cuenta` para mostrar el token decodificado. Explica `iss`, `aud`, `exp`, `scp` y `roles`.
 

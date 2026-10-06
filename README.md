@@ -8,8 +8,8 @@ Recursos creados el 4 de octubre de 2026 en `us-east-1`:
 
 | Recurso | Identificador o URL |
 | --- | --- |
-| Frontend Angular | `https://main.d1ipad4fvqyxdz.amplifyapp.com` |
-| AWS Amplify | `d1ipad4fvqyxdz` |
+| Frontend Angular en EC2 | `https://100-48-142-195.sslip.io` (requiere abrir 80/443 y registrar URI SPA) |
+| Sitio anterior en Amplify | `https://main.d1ipad4fvqyxdz.amplifyapp.com` |
 | API Gateway | `https://2iguro8kei.execute-api.us-east-1.amazonaws.com` |
 | HTTP API | `2iguro8kei` |
 | EC2 | `i-0fa2cb315c7d87354` |
@@ -106,7 +106,7 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 - El BFF y los microservicios vuelven a validar firma, issuer, audience y expiracion.
 - Los scopes del claim `scp` se convierten a `SCOPE_*`.
 - Los roles del claim `roles` se convierten a `ROLE_*`.
-- Escrituras autorizadas con el scope `pedidos.write` o roles `Pedidos.Admin` y `Pedidos.Operador`. Se mantienen los scopes anteriores para compatibilidad.
+- Escrituras autorizadas con el scope `pedidos.escribe` o roles `Pedidos.Admin` y `Pedidos.Operador`.
 - No se guardan contrasenas, tokens ni archivos `.env` en Git.
 
 ## Configuracion
