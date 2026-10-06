@@ -210,3 +210,7 @@ mvn clean package
 ```
 
 Las pruebas de repositorio usan H2 y no requieren RabbitMQ. El `docker-compose.yml` fue validado con `docker compose config --quiet`.
+
+## Estado del laboratorio
+
+El 6 de octubre de 2026 se verifico en EC2 la ejecucion del BFF, los microservicios, PostgreSQL y los dos nodos RabbitMQ. El API Gateway devolvio `200` para `/api/v1/public`, `401` para `/api/v1` sin token y acepto el preflight CORS desde `https://100-48-142-195.sslip.io`. Las 12 pruebas Maven terminaron sin fallas. Falta probar con un access token real la respuesta `200` protegida y el `POST` del carrito; este paso depende de completar el login de la SPA en Entra ID. Ver `docs/DESPLIEGUE_AWS_AZURE.md` y `docs/GUIA_PRESENTACION_EP3_EP4.md`.
