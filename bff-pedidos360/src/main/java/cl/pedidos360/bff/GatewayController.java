@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -83,15 +84,16 @@ public class GatewayController {
 
     @PostMapping("/pedidos")
     @PreAuthorize("hasAuthority('SCOPE_pedidos.escribe') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
-    public PedidoAceptadoDto crearPedido(
+    public ResponseEntity<PedidoAceptadoDto> crearPedido(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody NuevoPedidoRequest request) {
-        return restClient.post()
+        PedidoAceptadoDto aceptado = restClient.post()
                 .uri(serviceUrls.pedidosUrl() + "/pedidos")
                 .header(HttpHeaders.AUTHORIZATION, authorization)
                 .body(request)
                 .retrieve()
                 .body(PedidoAceptadoDto.class);
+        return ResponseEntity.accepted().body(aceptado);
     }
 
     @PostMapping("/notificaciones/prueba")
