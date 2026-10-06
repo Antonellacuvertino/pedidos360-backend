@@ -121,7 +121,7 @@ Variables principales:
 
 ```text
 AZURE_TENANT_ID=
-AZURE_API_AUDIENCE=api://ID_APLICACION_API
+AZURE_API_AUDIENCE=ID_APLICACION_API
 CORS_ALLOWED_ORIGINS=https://URL_FRONTEND
 DB_NAME=pedidos360
 DB_USER=pedidos360
@@ -130,6 +130,8 @@ RABBITMQ_USER=pedidos360
 RABBITMQ_PASSWORD=
 RABBITMQ_ERLANG_COOKIE=
 ```
+
+El audience debe coincidir literalmente con el claim `aud` del access token. En el tenant de esta evaluacion el token contiene `7d7e6f82-35dc-4fd2-b580-7776c558d963`, sin `api://`. Ese prefijo si se conserva en las URI de los scopes solicitados por Angular.
 
 Correo SMTP real es opcional:
 

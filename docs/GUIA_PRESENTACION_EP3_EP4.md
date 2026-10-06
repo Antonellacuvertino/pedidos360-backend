@@ -21,7 +21,7 @@ Esta guia sigue las pautas oficiales entregadas para Pedidos360. La demostracion
 | Tenant ID | `e5372bf0-c5e3-4286-887c-79069f209c1f` |
 | Client ID frontend | `ad02ca6f-9972-496e-837c-98c92a43220e` |
 | Client ID API | `7d7e6f82-35dc-4fd2-b580-7776c558d963` |
-| Audience | `api://7d7e6f82-35dc-4fd2-b580-7776c558d963` |
+| Audience | `7d7e6f82-35dc-4fd2-b580-7776c558d963` |
 | Scopes | `pedidos.read`, `pedidos.write` |
 
 ## Guion de 8 minutos
