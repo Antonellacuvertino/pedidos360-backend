@@ -30,6 +30,8 @@ curl -i https://2iguro8kei.execute-api.us-east-1.amazonaws.com/api/v1/productos
 
 La primera llamada responde `200`; la segunda responde `401` si no se envia un JWT. No se documentan secretos ni credenciales en el repositorio.
 
+Para la demostracion en Postman, importar los dos archivos de `postman/`. Copiar el access token desde **Mi cuenta** a la variable secreta `access_token` del entorno local y ejecutar las peticiones en orden. Comprobar los IDs y el precio actual con los GET antes de enviar el POST de pedido. No exportar el entorno despues de pegar el token.
+
 ## Arquitectura
 
 ```text

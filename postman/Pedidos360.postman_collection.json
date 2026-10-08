@@ -1,0 +1,84 @@
+{
+  "info": {
+    "name": "Pedidos360 - demostracion API Gateway",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 GET publico sin token (200)",
+      "request": {
+        "method": "GET",
+        "url": "{{api_gateway_url}}/api/v1/public"
+      }
+    },
+    {
+      "name": "02 GET protegido sin token (401)",
+      "request": {
+        "method": "GET",
+        "url": "{{api_gateway_url}}/api/v1"
+      }
+    },
+    {
+      "name": "03 GET protegido con token (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1"
+      }
+    },
+    {
+      "name": "04 GET productos (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/productos"
+      }
+    },
+    {
+      "name": "05 GET clientes (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/clientes"
+      }
+    },
+    {
+      "name": "06 POST producto (scope pedidos.write)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Teclado mecanico\",\n  \"categoria\": \"Perifericos\",\n  \"precio\": 45990,\n  \"stock\": 12\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/productos"
+      }
+    },
+    {
+      "name": "07 POST pedido (202 Accepted)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{cliente_id}},\n  \"productoId\": {{producto_id}},\n  \"cantidad\": 1,\n  \"total\": {{precio_producto}},\n  \"estado\": \"RECIBIDO\"\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/pedidos"
+      }
+    },
+    {
+      "name": "08 GET pedidos procesados (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/pedidos"
+      }
+    }
+  ]
+}
