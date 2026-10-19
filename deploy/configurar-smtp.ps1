@@ -61,15 +61,17 @@ try {
 
     $payload = @{ remitente = $Remitente; password = $plainPassword } | ConvertTo-Json -Compress
     $plainPassword = $null
+    $encodedPayload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($payload))
+    $payload = $null
     $remoteScript = @'
+import base64
 import json
 import os
 from pathlib import Path
 import subprocess
-import sys
 import tempfile
 
-data = json.load(sys.stdin)
+data = json.loads(base64.b64decode('__PEDIDOS360_SMTP_PAYLOAD__'))
 root = Path('/opt/pedidos360/backend')
 env_file = root / 'deploy/.env.node'
 updates = {
@@ -100,15 +102,14 @@ subprocess.run(['docker', 'compose', '--env-file', 'deploy/.env.node',
                cwd=root, check=True, timeout=180)
 print('SMTP habilitado; contenedor de notificaciones recreado. Probar entrega real antes de presentarla.')
 '@
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteScript))
-    $remoteCommand = "python3 -c `"import base64;exec(base64.b64decode('$encoded'))`""
+    $remoteScript = $remoteScript.Replace('__PEDIDOS360_SMTP_PAYLOAD__', $encodedPayload)
+    $encodedPayload = $null
     $sent = Invoke-AwsJson @('ec2-instance-connect', 'send-ssh-public-key', '--instance-id',
         $InstanceId, '--availability-zone', $node.Placement.AvailabilityZone,
         '--instance-os-user', 'ec2-user', '--ssh-public-key', "file://$keyPath.pub")
     if (-not $sent.Success) { throw 'EC2 Instance Connect no acepto la llave.' }
-    $payload | & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new `
-        -o "UserKnownHostsFile=$knownHosts" -i $keyPath "ec2-user@$($node.PublicIpAddress)" $remoteCommand
-    $payload = $null
+    $remoteScript | & ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new `
+        -o "UserKnownHostsFile=$knownHosts" -i $keyPath "ec2-user@$($node.PublicIpAddress)" 'python3 -'
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo configurar SMTP en la EC2. Revisa el error anterior.' }
 } finally {
     if ($ruleAdded -and $cidr -and $securityGroup) {
