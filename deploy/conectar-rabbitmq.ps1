@@ -89,8 +89,9 @@ try {
     } else {
         Write-Host "Abriendo SSH y RabbitMQ en http://localhost:$LocalPort"
         Write-Host 'Mantenga esta ventana abierta durante la demostracion. Al salir se eliminan la llave y el permiso temporal.'
-        & ssh -tt -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$knownHosts" `
+        & ssh -tt -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$knownHosts" `
             -i $keyPath -L "${LocalPort}:127.0.0.1:15672" "ec2-user@$($node.PublicIpAddress)"
+        if ($LASTEXITCODE -ne 0) { throw 'El tunel SSH fallo. Cierra otra ventana que use el puerto local e intenta de nuevo.' }
     }
 }
 finally {
