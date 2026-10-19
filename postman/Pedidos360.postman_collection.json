@@ -79,6 +79,22 @@
         "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
         "url": "{{api_gateway_url}}/api/v1/pedidos"
       }
+    },
+    {
+      "name": "09 GET colas RabbitMQ (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/rabbitmq/queues"
+      }
+    },
+    {
+      "name": "10 GET auditoria (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/auditoria"
+      }
     }
   ]
 }

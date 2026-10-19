@@ -121,7 +121,7 @@ public class GatewayController {
     }
 
     @PostMapping("/rabbitmq/queues")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasRole('Pedidos.Admin')")
     public Map<?, ?> crearCola(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody RabbitQueueRequest request) {
@@ -134,7 +134,7 @@ public class GatewayController {
     }
 
     @DeleteMapping("/rabbitmq/queues/{name}")
-    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasRole('Pedidos.Admin')")
+    @PreAuthorize("hasRole('Pedidos.Admin')")
     public Map<?, ?> eliminarCola(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @PathVariable String name) {

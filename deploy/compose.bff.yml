@@ -1,0 +1,18 @@
+services:
+  bff:
+    build:
+      context: ..
+      dockerfile: bff-pedidos360/Dockerfile
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:?Define AZURE_TENANT_ID}
+      AZURE_API_AUDIENCE: ${AZURE_API_AUDIENCE:?Define AZURE_API_AUDIENCE}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?Define CORS_ALLOWED_ORIGINS}
+      PRODUCTOS_URL: ${PRODUCTOS_URL:?Define PRODUCTOS_URL}
+      CLIENTES_URL: ${CLIENTES_URL:?Define CLIENTES_URL}
+      PEDIDOS_URL: ${PEDIDOS_URL:?Define PEDIDOS_URL}
+      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL:?Define NOTIFICATIONS_URL}
+      RABBIT_ADMIN_URL: ${RABBIT_ADMIN_URL:?Define RABBIT_ADMIN_URL}
+      AUDITORIA_URL: ${AUDITORIA_URL:?Define AUDITORIA_URL}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

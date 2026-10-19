@@ -24,8 +24,10 @@ public record OrderEvent(
             BigDecimal total,
             String estado,
             String recipientEmail) {
+        UUID eventId = UUID.randomUUID();
+        Instant createdAt = Instant.now();
         return new OrderEvent(
-                UUID.randomUUID(),
+                eventId,
                 "ORDER_CREATED",
                 clienteId,
                 productoId,
@@ -33,9 +35,14 @@ public record OrderEvent(
                 total,
                 estado,
                 recipientEmail,
-                "Pedido recibido en Pedidos360",
-                "Tu pedido fue recibido y esta siendo procesado.",
-                Instant.now());
+                "Pedidos360 - confirmacion " + eventId,
+                ("Comprobante de pedido (no tributario)\n"
+                        + "Referencia: %s\nFecha: %s\nCliente: %s\nProducto: %s\n"
+                        + "Cantidad: %d\nTotal referencial: CLP %s\nEstado: %s\n\n"
+                        + "Tu pedido fue recibido y se esta procesando. "
+                        + "Este comprobante no acredita un pago ni reemplaza una boleta.\n")
+                        .formatted(eventId, createdAt, clienteId, productoId, cantidad, total.toPlainString(), estado),
+                createdAt);
     }
 
     public static OrderEvent notification(String recipientEmail, String subject, String message) {

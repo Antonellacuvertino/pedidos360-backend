@@ -3,5 +3,6 @@ target_test-classes/
 *.log
 application-local.yml
 .env
+deploy/.env.node
 .idea/
 *.iml

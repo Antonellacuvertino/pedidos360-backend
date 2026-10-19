@@ -2,24 +2,41 @@
 
 Backend multi-modulo construido con Java 21 y Spring Boot. Incluye seguridad JWT con Microsoft Entra ID, procesamiento asincrono con RabbitMQ, PostgreSQL y despliegue por contenedores.
 
+El despliegue con una EC2 por microservicio, rutas explicitas del API Gateway
+y acceso a RabbitMQ esta documentado en
+[deploy/ARQUITECTURA_MULTI_EC2.md](deploy/ARQUITECTURA_MULTI_EC2.md).
+La configuracion de usuarios invitados, roles y correo esta en
+[docs/ROLES_Y_CORREO.md](docs/ROLES_Y_CORREO.md).
+
 ## Despliegue cloud actual
 
-Recursos creados el 4 de octubre de 2026 en `us-east-1`:
+Recursos en `us-east-1`, actualizados el 14 de octubre de 2026:
 
 | Recurso | Identificador o URL |
 | --- | --- |
-| Frontend Angular en EC2 | `https://100-48-142-195.sslip.io` (requiere abrir 80/443 y registrar URI SPA) |
-| Sitio anterior en Amplify | `https://main.d1ipad4fvqyxdz.amplifyapp.com` |
+| Frontend Angular en EC2 | `https://100-48-142-195.sslip.io` |
 | API Gateway | `https://2iguro8kei.execute-api.us-east-1.amazonaws.com` |
 | HTTP API | `2iguro8kei` |
-| EC2 | `i-0fa2cb315c7d87354` |
-| IP elastica EC2 | `100.48.142.195` |
-| RabbitMQ nodo 1 | `http://100.48.142.195:15672` |
-| RabbitMQ nodo 2 | `http://100.48.142.195:15673` |
+| EC2 base: Angular, PostgreSQL, RabbitMQ | `i-0fa2cb315c7d87354` |
+| Elastic IP EC2 base | `100.48.142.195` (`eipalloc-0971e78daf9e9733d`) |
+| ALB interno | `pedidos360-interno` |
+| VPC Link | `2bstdy` |
+| Productos | `i-0e4520b1a0a880a54` |
+| Clientes | `i-0488000741bdfc0a4` |
+| Pedidos | `i-0981683737994def0` |
+| Notificaciones | `i-0e66adb0f0d5b521e` |
+| Rabbit Admin | `i-041fc61b09e8f5da6` |
+| Auditoria | `i-0bbd4112eeb23a444` |
+| BFF | `i-0bb1bdbc28eb2062d` |
 | Entra tenant | `e5372bf0-c5e3-4286-887c-79069f209c1f` |
 | Entra API client ID | `7d7e6f82-35dc-4fd2-b580-7776c558d963` |
 
-El grupo `pedidos360-ec2-sg` restringe SSH y los paneles RabbitMQ a la IP del estudiante. El puerto `8080` recibe la integracion HTTP de API Gateway. Los puertos internos de los microservicios no estan habilitados en el grupo de seguridad.
+El Gateway usa rutas explicitas con `pedidos.read` para GET y
+`pedidos.write` para POST. Conecta por VPC Link al ALB interno; cada target
+group apunta a una EC2 distinta. La ruta `ANY /api/{proxy+}` permanece como
+respaldo para endpoints no migrados. El panel RabbitMQ no se expone al publico:
+abrirlo con `deploy/conectar-rabbitmq.ps1 -CopiarClave` en
+`http://localhost:15672`.
 
 Pruebas rapidas del gateway:
 
@@ -42,27 +59,24 @@ Angular + MSAL
 AWS API Gateway + JWT Authorizer
       |
       v
-BFF Pedidos360 :8080
-      |
-      +--> Productos :8081 ---- consume stock.queue
-      +--> Clientes :8082
-      +--> Pedidos :8083 ------ publica order.created / consume orders.queue
-      +--> Notificaciones :8084 consume notifications.queue
-      +--> Rabbit Admin :8085 - administra colas, exchanges y bindings
-      +--> Auditoria :8086 ---- consume audit.queue
+VPC Link -> ALB interno
+             |-- Productos :8081 ---- consume stock.queue
+             |-- Clientes :8082
+             |-- Pedidos :8083 ------ publica order.created / consume orders.queue
+             |-- Notificaciones :8084 consume notifications.queue
+             |-- Rabbit Admin :8085 - administra colas, exchanges y bindings
+             |-- Auditoria :8086 ---- consume audit.queue
+             `-- BFF :8080 ---------- resumen y rutas no migradas
                     |
                     v
-         RabbitMQ cluster (2 nodos)
-                    |
-                    v
-                PostgreSQL
+         EC2 base: RabbitMQ cluster (2 nodos) + PostgreSQL
 ```
 
 ## Modulos
 
 | Modulo | Puerto | Responsabilidad |
 | --- | ---: | --- |
-| `bff-pedidos360` | 8080 | Punto de entrada unico para frontend y API Gateway. |
+| `bff-pedidos360` | 8080 | Agrega el resumen y atiende endpoints no migrados. |
 | `ms-productos` | 8081 | Catalogo y descuento asincrono de stock. |
 | `ms-clientes` | 8082 | Gestion de clientes. |
 | `ms-pedidos` | 8083 | Publica y procesa ordenes. |
@@ -94,7 +108,7 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 ## Flujo de una compra
 
 1. Angular envia `POST /api/v1/pedidos` con JWT.
-2. API Gateway y BFF validan el token.
+2. API Gateway valida el JWT y el scope `pedidos.write`; `ms-pedidos` valida otra vez firma, issuer, audience y vigencia.
 3. `ms-pedidos` publica `order.created` y responde `202 Accepted`.
 4. `orders.queue` guarda la orden.
 5. `stock.queue` descuenta inventario.
@@ -108,7 +122,7 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 - El BFF y los microservicios vuelven a validar firma, issuer, audience y expiracion.
 - Los scopes del claim `scp` se convierten a `SCOPE_*`.
 - Los roles del claim `roles` se convierten a `ROLE_*`.
-- Escrituras autorizadas con el scope `pedidos.write` o roles `Pedidos.Admin` y `Pedidos.Operador`.
+- Las compras usan el scope `pedidos.write`. La administracion de RabbitMQ exige el rol `Pedidos.Admin` en el backend, ademas del scope de escritura exigido por API Gateway.
 - No se guardan contrasenas, tokens ni archivos `.env` en Git.
 
 ## Configuracion
@@ -145,7 +159,7 @@ SMTP_FROM=correo
 NOTIFICATION_TO=correo_de_prueba
 ```
 
-Si `SMTP_ENABLED=false`, el consumidor procesa el mensaje y registra un correo simulado en logs.
+Si `SMTP_ENABLED=false`, el consumidor procesa el mensaje y registra un correo simulado en logs. No se debe anunciar la llegada de un correo hasta configurar SMTP y verificar la recepcion. El mensaje de confirmacion contiene referencia, fecha, producto, cantidad y total; no es una boleta tributaria.
 
 ## Ejecutar con Docker
 
@@ -217,4 +231,4 @@ Las pruebas de repositorio usan H2 y no requieren RabbitMQ. El `docker-compose.y
 
 ## Estado del laboratorio
 
-El 6 de octubre de 2026 se verifico en EC2 la ejecucion del BFF, los microservicios, PostgreSQL y los dos nodos RabbitMQ. El API Gateway devolvio `200` para `/api/v1/public`, `401` para `/api/v1` sin token y acepto el preflight CORS desde `https://100-48-142-195.sslip.io`. Las 12 pruebas Maven terminaron sin fallas. Falta probar con un access token real la respuesta `200` protegida y el `POST` del carrito; este paso depende de completar el login de la SPA en Entra ID. Ver `docs/DESPLIEGUE_AWS_AZURE.md` y `docs/GUIA_PRESENTACION_EP3_EP4.md`.
+El 14 de octubre de 2026 se comprobo el cluster RabbitMQ de dos nodos y las ocho colas, y la salud de los siete servicios en EC2 separadas. La usuaria tambien confirmo login, catalogo y comprobante en la web. Queda pendiente repetir con un JWT real las rutas explicitas del API Gateway, asignar el rol de aplicacion en Entra y activar/probar SMTP real. Ver `deploy/ARQUITECTURA_MULTI_EC2.md` y `docs/GUIA_PRESENTACION_EP3_EP4.md`.

@@ -7,9 +7,9 @@ Esta guia sigue las pautas oficiales entregadas para Pedidos360. La demostracion
 - URL HTTPS del frontend.
 - Tenant y registros de aplicaciones en Microsoft Entra ID.
 - API HTTP y JWT Authorizer en AWS API Gateway.
-- Instancia EC2 en estado `running`.
-- `docker compose ps` con servicios activos.
-- Panel RabbitMQ abierto en el nodo 1.
+- Ocho EC2 en estado `running` (base y siete servicios).
+- Siete target groups del ALB en estado `healthy`.
+- Panel RabbitMQ abierto mediante tunel SSH local.
 - Postman con `api_gateway_url` y un access token vigente.
 
 ## Valores del despliegue
@@ -18,6 +18,8 @@ Esta guia sigue las pautas oficiales entregadas para Pedidos360. La demostracion
 | --- | --- |
 | Frontend en EC2 | `https://100-48-142-195.sslip.io` (comprobar HTTPS antes de presentar) |
 | API Gateway | `https://2iguro8kei.execute-api.us-east-1.amazonaws.com` |
+| API HTTP / VPC Link | `2iguro8kei` / `2bstdy` |
+| ALB interno | `pedidos360-interno` |
 | Tenant ID | `e5372bf0-c5e3-4286-887c-79069f209c1f` |
 | Client ID frontend | `ad02ca6f-9972-496e-837c-98c92a43220e` |
 | Client ID API | `7d7e6f82-35dc-4fd2-b580-7776c558d963` |
@@ -28,7 +30,7 @@ Esta guia sigue las pautas oficiales entregadas para Pedidos360. La demostracion
 
 ### 0:00 - Arquitectura
 
-"Pedidos360 usa Angular para la interfaz, Microsoft Entra ID como proveedor de identidad, API Gateway como entrada segura y microservicios Spring Boot desplegados en EC2. Las escrituras de pedidos se procesan de forma asincrona con RabbitMQ."
+"Pedidos360 usa Angular para la interfaz, Microsoft Entra ID para el login y API Gateway como entrada segura. El Gateway llega por VPC Link a un ALB interno; cada microservicio Spring Boot tiene su propia EC2. Los pedidos se procesan de forma asincrona con RabbitMQ."
 
 Muestra el diagrama del README y explica que el frontend nunca llama directamente a los microservicios.
 
@@ -48,27 +50,38 @@ En el frontend inicia sesion con Microsoft y abre `Mi cuenta` para mostrar el to
 Muestra:
 
 - API HTTP.
-- Integracion con `http://EC2:8080`.
-- Rutas `/api/v1/{proxy+}`.
+- Rutas explicitas GET y POST para productos, clientes y pedidos.
+- Integraciones privadas con VPC Link `2bstdy` y listener del ALB interno.
+- Mapeo de path y scopes `pedidos.read` / `pedidos.write`.
+- Ruta `ANY /api/{proxy+}` como respaldo para endpoints no migrados.
 - CORS.
 - JWT Authorizer con issuer y audience.
 
 Ejecuta en Postman una llamada sin token y otra con token. Debe verse `401` y luego `200`.
 
-### 2:45 - Despliegue en EC2
+### 2:45 - EC2 y balanceador
 
-En la terminal de EC2 ejecuta:
+En AWS EC2 -> Instancias muestra la base y las siete maquinas de servicios.
+En EC2 -> Balanceadores de carga muestra `pedidos360-interno`. En Grupos de
+destino muestra los siete target groups `healthy`: uno por EC2. Explica que
+el frontend nunca llama a las IP privadas; solo usa API Gateway.
+
+En la terminal de la EC2 base ejecuta:
 
 ```bash
 docker compose ps
 docker compose exec rabbitmq-1 rabbitmqctl cluster_status
 ```
 
-Explica que cada microservicio tiene su propio contenedor y puerto. En `cluster_status` deben aparecer `rabbit@rabbitmq-1` y `rabbit@rabbitmq-2`.
+Explica que cada EC2 nueva ejecuta un unico contenedor de aplicacion, con su
+puerto propio. En `cluster_status` deben aparecer `rabbit@rabbitmq-1` y
+`rabbit@rabbitmq-2` en la EC2 base.
 
 ### 3:45 - Colas, exchanges y DLQ
 
-En RabbitMQ muestra:
+Desde el repositorio backend, abre el tunel con
+`.\deploy\conectar-rabbitmq.ps1 -CopiarClave`, entra en
+`http://localhost:15672` y muestra:
 
 - `orders.exchange` de tipo topic.
 - `notifications.exchange` de tipo direct.
@@ -91,9 +104,12 @@ Frase clave:
 
 "El POST no espera que todos los procesos terminen. Publica el evento y cada consumidor procesa su responsabilidad de forma desacoplada."
 
-### 6:30 - Prueba de DLQ
+### 6:30 - DLQ
 
-Envia un pedido con `productoId` inexistente. Luego muestra `stock.dlq` con un mensaje.
+Muestra las colas `orders.dlq`, `notifications.dlq`, `stock.dlq` y `audit.dlq`.
+No prometas un mensaje pendiente si el consumidor ya lo proceso o la API
+rechazo la entrada antes de publicar. Lo importante es mostrar la declaracion
+y el binding al DLX.
 
 ```bash
 docker compose exec rabbitmq-1 rabbitmqctl list_queues name messages consumers
@@ -123,7 +139,7 @@ Explica que el consumidor ejecuta `basicNack` con `requeue=false`; el DLX rediri
 | NACK | Rechaza un mensaje y decide si se reencola o va a DLQ. |
 | DLX / DLQ | Exchange y cola usados para conservar mensajes que no pudieron procesarse. |
 | Idempotencia | Reprocesar el mismo evento sin duplicar el resultado. |
-| BFF | Capa que adapta y centraliza las llamadas del frontend. |
+| BFF | Capa que agrega el resumen y atiende rutas no migradas; el Gateway enruta los recursos principales directamente a sus EC2. |
 
 ## Preguntas probables
 
