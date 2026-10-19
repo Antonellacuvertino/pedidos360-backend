@@ -34,7 +34,20 @@ SMTP_PASSWORD=clave_de_aplicacion_o_credencial_smtp
 SMTP_FROM=remitente_autorizado
 ```
 
-Recrear solo ese contenedor y probar primero `POST /api/v1/notificaciones/prueba`. Confirmar la llegada al buzon y revisar `notifications.dlq` si falla. Con `SMTP_ENABLED=false`, **no se envia correo**: solo queda un registro de simulacion en logs. No incluir credenciales SMTP en Git, Postman, capturas ni chat.
+Para una cuenta Gmail personal:
+
+1. En la cuenta que enviara los mensajes, activar **Verificacion en 2 pasos**.
+2. Abrir [Contraseñas de aplicaciones](https://myaccount.google.com/apppasswords) y generar una para Pedidos360. Esta opcion puede no estar disponible por la politica de la cuenta. No usar la contrasena normal de Gmail.
+3. En `deploy/.env.node` de la EC2 de notificaciones usar `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USERNAME` con el correo completo de la cuenta remitente, `SMTP_PASSWORD` con la contrasena de aplicacion y `SMTP_FROM` con ese mismo correo. Definir `SMTP_ENABLED=true`.
+4. Recrear solo el contenedor de notificaciones:
+
+   ```bash
+   docker compose --env-file deploy/.env.node -f deploy/compose.microservice.yml up -d --force-recreate app
+   ```
+
+5. Probar `POST /api/v1/notificaciones/prueba` con JWT valido. La respuesta `202` solo confirma que el evento entro a la cola; verificar que el correo llego al destinatario (incluido spam) y que `notifications.dlq` no recibio el evento. Consultar logs de `notifications-service` si no llega.
+
+Con `SMTP_ENABLED=false`, **no se envia correo**: solo queda un registro de simulacion en logs. No incluir credenciales SMTP en Git, Postman, capturas ni chat. La invitacion de Entra al usuario personal no configura SMTP por si sola.
 
 ## 4. Demostracion corta
 
@@ -43,4 +56,4 @@ Recrear solo ese contenedor y probar primero `POST /api/v1/notificaciones/prueba
 3. Crear un pedido de un producto. Mostrar `202`, el comprobante en la web, `notifications.queue` en RabbitMQ y el correo recibido **solo si SMTP real esta activado y probado**.
 4. Probar en Postman la administracion de una cola temporal: sin rol admin `403`; con rol admin y scope `pedidos.write`, creacion autorizada. Eliminar luego la cola temporal.
 
-Referencias: [Invitar usuario externo](https://learn.microsoft.com/en-us/azure/active-directory/external-identities/add-users-administrator), [Roles de aplicacion y claim `roles`](https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-app-roles-in-apps), [Asignar usuarios a una aplicacion](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/assign-user-or-group-access-portal).
+Referencias: [Invitar usuario externo](https://learn.microsoft.com/en-us/azure/active-directory/external-identities/b2b-quickstart-add-guest-users-portal), [Roles de aplicacion y claim `roles`](https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-app-roles-in-apps), [Asignar usuarios a una aplicacion](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/assign-user-or-group-access-portal), [Contrasenas de aplicaciones de Google](https://support.google.com/accounts/answer/185833?hl=es), [SMTP de Gmail](https://support.google.com/a/answer/176600?hl=es).
