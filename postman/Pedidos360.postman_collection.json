@@ -110,6 +110,21 @@
         },
         "url": "{{api_gateway_url}}/api/v1/notificaciones/prueba"
       }
+    },
+    {
+      "name": "12 POST cola de prueba (Operador 403, Admin 201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"demo.presentacion\",\n  \"durable\": false\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/rabbitmq/queues"
+      }
     }
   ]
 }

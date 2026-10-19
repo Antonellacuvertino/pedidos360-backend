@@ -54,6 +54,6 @@ Con `SMTP_ENABLED=false`, **no se envia correo**: solo queda un registro de simu
 1. Mostrar el invitado en **Usuarios** y su asignacion en **Aplicaciones empresariales > Pedidos360 API**.
 2. Iniciar sesion con esa cuenta, abrir **Mi cuenta** y mostrar `aud`, `scp` y `roles` sin compartir el JWT completo.
 3. Crear un pedido de un producto. Mostrar `202`, el comprobante en la web, `notifications.queue` en RabbitMQ y el correo recibido **solo si SMTP real esta activado y probado**.
-4. Probar en Postman la administracion de una cola temporal: sin rol admin `403`; con rol admin y scope `pedidos.write`, creacion autorizada. Eliminar luego la cola temporal.
+4. En Postman usar la peticion 12 con token de Operador: `403` esperado. Repetir con token de Admin y scope `pedidos.write`: `201` esperado. Eliminar luego `demo.presentacion` desde RabbitMQ Management si fue creada.
 
 Referencias: [Invitar usuario externo](https://learn.microsoft.com/en-us/azure/active-directory/external-identities/b2b-quickstart-add-guest-users-portal), [Roles de aplicacion y claim `roles`](https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-app-roles-in-apps), [Asignar usuarios a una aplicacion](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/assign-user-or-group-access-portal), [Contrasenas de aplicaciones de Google](https://support.google.com/accounts/answer/185833?hl=es), [SMTP de Gmail](https://support.google.com/a/answer/176600?hl=es).
