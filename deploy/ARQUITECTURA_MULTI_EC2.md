@@ -1,9 +1,13 @@
 # Separacion de microservicios en EC2
 
-Estado al 14 de octubre de 2026: **desplegado en AWS y en pruebas**. Los siete
-target groups del ALB estan `healthy` y el VPC Link esta `AVAILABLE`. Las rutas
-GET/POST estan creadas en API Gateway; falta confirmar desde el navegador el
-flujo de compra completo con un JWT real antes de darlo por cerrado.
+Comprobado el 19 de octubre de 2026: las ocho EC2 estaban `running`, los siete
+target groups del ALB `healthy` y el VPC Link `AVAILABLE`. La web HTTPS y el
+endpoint publico respondieron `200`; Productos sin JWT respondio `401`. El
+cluster RabbitMQ tenia dos nodos activos, cuatro colas de trabajo y cuatro DLQ.
+El estado puede cambiar si se detiene el laboratorio. La compra con JWT y el
+claim `roles` deben comprobarse de nuevo con las cuentas invitadas antes de
+afirmar que esa prueba final esta cerrada. SMTP real sigue desactivado hasta
+que se configure una cuenta de envio.
 
 ## Lo que pide la evaluacion
 
