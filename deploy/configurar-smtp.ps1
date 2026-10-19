@@ -50,11 +50,6 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo generar la llave temporal.' }
     & icacls $keyPath /inheritance:r /grant:r "${env:USERNAME}:(R)" /remove:g '*S-1-3-4' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron restringir los permisos de la llave.' }
-    $sent = Invoke-AwsJson @('ec2-instance-connect', 'send-ssh-public-key', '--instance-id',
-        $InstanceId, '--availability-zone', $node.Placement.AvailabilityZone,
-        '--instance-os-user', 'ec2-user', '--ssh-public-key', "file://$keyPath.pub")
-    if (-not $sent.Success) { throw 'EC2 Instance Connect no acepto la llave.' }
-
     $password = Read-Host 'Pega aqui la contrasena de aplicacion Gmail (no se mostrara)' -AsSecureString
     $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
     try {
@@ -107,6 +102,10 @@ print('SMTP habilitado; contenedor de notificaciones recreado. Probar entrega re
 '@
     $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteScript))
     $remoteCommand = "python3 -c `"import base64;exec(base64.b64decode('$encoded'))`""
+    $sent = Invoke-AwsJson @('ec2-instance-connect', 'send-ssh-public-key', '--instance-id',
+        $InstanceId, '--availability-zone', $node.Placement.AvailabilityZone,
+        '--instance-os-user', 'ec2-user', '--ssh-public-key', "file://$keyPath.pub")
+    if (-not $sent.Success) { throw 'EC2 Instance Connect no acepto la llave.' }
     $payload | & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new `
         -o "UserKnownHostsFile=$knownHosts" -i $keyPath "ec2-user@$($node.PublicIpAddress)" $remoteCommand
     $payload = $null
