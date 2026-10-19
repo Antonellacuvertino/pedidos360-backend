@@ -38,8 +38,8 @@ Para una cuenta Gmail personal:
 
 1. En la cuenta que enviara los mensajes, activar **Verificacion en 2 pasos**.
 2. Abrir [Contraseñas de aplicaciones](https://myaccount.google.com/apppasswords) y generar una para Pedidos360. Esta opcion puede no estar disponible por la politica de la cuenta. No usar la contrasena normal de Gmail.
-3. En `deploy/.env.node` de la EC2 de notificaciones usar `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USERNAME` con el correo completo de la cuenta remitente, `SMTP_PASSWORD` con la contrasena de aplicacion y `SMTP_FROM` con ese mismo correo. Definir `SMTP_ENABLED=true`.
-4. Recrear solo el contenedor de notificaciones:
+3. Desde PowerShell, en la raiz del proyecto, ejecutar `./backend-pedidos360/deploy/configurar-smtp.ps1`. El script pide la contrasena de aplicacion sin mostrarla, actualiza el archivo privado de la EC2 de notificaciones y recrea solo ese contenedor. Por defecto usa `antonellaroxanna@gmail.com` como remitente; para otra cuenta pasar `-Remitente correo@ejemplo.com`. La AWS CLI debe estar autenticada y la EC2 encendida. No pegar la clave en el chat ni en el codigo fuente.
+4. Si se configura manualmente, en `deploy/.env.node` de la EC2 de notificaciones usar `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USERNAME` con el correo completo de la cuenta remitente, `SMTP_PASSWORD` con la contrasena de aplicacion y `SMTP_FROM` con ese mismo correo. Definir `SMTP_ENABLED=true` y recrear el contenedor:
 
    ```bash
    docker compose --env-file deploy/.env.node -f deploy/compose.microservice.yml up -d --force-recreate app
