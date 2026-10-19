@@ -67,7 +67,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"clienteId\": {{cliente_id}},\n  \"productoId\": {{producto_id}},\n  \"cantidad\": 1,\n  \"total\": {{precio_producto}},\n  \"estado\": \"RECIBIDO\"\n}"
+          "raw": "{\n  \"clienteId\": {{cliente_id}},\n  \"productoId\": {{producto_id}},\n  \"cantidad\": 1,\n  \"total\": {{precio_producto}},\n  \"estado\": \"RECIBIDO\",\n  \"email\": \"{{correo_destino}}\"\n}"
         },
         "url": "{{api_gateway_url}}/api/v1/pedidos"
       }
@@ -94,6 +94,21 @@
         "method": "GET",
         "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
         "url": "{{api_gateway_url}}/api/v1/auditoria"
+      }
+    },
+    {
+      "name": "11 POST notificacion de prueba (202)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"destinatario\": \"{{correo_destino}}\",\n  \"asunto\": \"Prueba Pedidos360\",\n  \"mensaje\": \"Correo de prueba desde notifications-service.\"\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/notificaciones/prueba"
       }
     }
   ]
