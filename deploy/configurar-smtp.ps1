@@ -1,7 +1,8 @@
 param(
     [string]$Region = 'us-east-1',
     [string]$InstanceId = 'i-0e66adb0f0d5b521e',
-    [string]$Remitente = 'antonellaroxanna@gmail.com'
+    [string]$Remitente = 'antonellaroxanna@gmail.com',
+    [switch]$DesdePortapapeles
 )
 
 $ErrorActionPreference = 'Stop'
@@ -50,14 +51,20 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo generar la llave temporal.' }
     & icacls $keyPath /inheritance:r /grant:r "${env:USERNAME}:(R)" /remove:g '*S-1-3-4' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron restringir los permisos de la llave.' }
-    $password = Read-Host 'Pega aqui la contrasena de aplicacion Gmail (no se mostrara)' -AsSecureString
-    $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
-    try {
-        $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer) -replace '\s', ''
-    } finally {
-        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
+    if ($DesdePortapapeles) {
+        $plainPassword = (Get-Clipboard -Raw) -replace '\s', ''
+    } else {
+        $password = Read-Host 'Pega aqui la contrasena de aplicacion Gmail (no se mostrara)' -AsSecureString
+        $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
+        try {
+            $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer) -replace '\s', ''
+        } finally {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
+        }
     }
-    if (-not $plainPassword) { throw 'La contrasena de aplicacion esta vacia.' }
+    if ($plainPassword -notmatch '^[A-Za-z0-9]{16}$') {
+        throw 'Se esperaba una contrasena de aplicacion Gmail de 16 caracteres. Revisa que no hayas copiado otra clave.'
+    }
 
     $payload = @{ remitente = $Remitente; password = $plainPassword } | ConvertTo-Json -Compress
     $plainPassword = $null
@@ -112,6 +119,7 @@ print('SMTP habilitado; contenedor de notificaciones recreado. Probar entrega re
         -o "UserKnownHostsFile=$knownHosts" -i $keyPath "ec2-user@$($node.PublicIpAddress)" 'python3 -'
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo configurar SMTP en la EC2. Revisa el error anterior.' }
 } finally {
+    if ($DesdePortapapeles) { Set-Clipboard -Value '' }
     if ($ruleAdded -and $cidr -and $securityGroup) {
         & aws ec2 revoke-security-group-ingress --group-id $securityGroup --protocol tcp --port 22 `
             --cidr $cidr --region $Region --no-cli-pager | Out-Null
