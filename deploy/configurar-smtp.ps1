@@ -119,7 +119,9 @@ print('SMTP habilitado; contenedor de notificaciones recreado. Probar entrega re
         -o "UserKnownHostsFile=$knownHosts" -i $keyPath "ec2-user@$($node.PublicIpAddress)" 'python3 -'
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo configurar SMTP en la EC2. Revisa el error anterior.' }
 } finally {
-    if ($DesdePortapapeles) { Set-Clipboard -Value '' }
+    if ($DesdePortapapeles) {
+        try { Set-Clipboard -Value ' ' } catch { Write-Warning 'Limpia el portapapeles manualmente.' }
+    }
     if ($ruleAdded -and $cidr -and $securityGroup) {
         & aws ec2 revoke-security-group-ingress --group-id $securityGroup --protocol tcp --port 22 `
             --cidr $cidr --region $Region --no-cli-pager | Out-Null
