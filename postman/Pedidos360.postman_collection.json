@@ -43,6 +43,21 @@
       }
     },
     {
+      "name": "05b POST cliente con correo propio (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Cliente presentacion\",\n  \"email\": \"{{correo_destino}}\",\n  \"segmento\": \"Retail\"\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/clientes"
+      }
+    },
+    {
       "name": "06 POST producto (scope pedidos.write)",
       "request": {
         "method": "POST",

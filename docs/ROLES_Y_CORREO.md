@@ -21,7 +21,7 @@ La lectura y la compra siguen usando los scopes `pedidos.read` y `pedidos.write`
 
 El carrito envia el correo del cliente seleccionado en cada `POST /api/v1/pedidos`. `ms-pedidos` publica `order.created`; `notifications-service` consume `notifications.queue` y genera un mensaje con referencia, fecha, IDs, cantidad y total. Es un **comprobante no tributario**, no una boleta fiscal. Si el carrito tiene varios productos, actualmente se crea un pedido y un correo por producto.
 
-Para recibirlo en el correo personal, el cliente seleccionado en el carrito debe tener esa direccion. Si no existe, crear un cliente con `POST /api/v1/clientes` en Postman y seleccionarlo antes de confirmar la compra. No usar el correo de otra persona sin permiso.
+Para recibirlo en el correo personal, el cliente seleccionado en el carrito debe tener esa direccion. Los clientes iniciales tienen otros correos. Si no existe el cliente propio, usar la peticion **05b POST cliente con correo propio** de Postman, copiar su `id` y seleccionarlo en el carrito antes de confirmar. No usar el correo de otra persona sin permiso.
 
 El envio real necesita un buzon SMTP autorizado. En la EC2 de `notifications-service`, editar su `deploy/.env.node` privado y definir:
 
