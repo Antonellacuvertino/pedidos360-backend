@@ -36,7 +36,7 @@ Pega este texto en Claude **sin incluir contrasenas, tokens ni archivos
 > Operador intenta administrar topicos. No expongas puertos Spring al publico.
 > 4. Prueba en Postman un GET de detalle de producto, un pago simulado y
 > consultas de analitica; confirma los eventos con key/partition/offset en
-> Kafka UI y el estado de los consumer groups. Repite cuatro veces el mismo
+> Kafka UI y el estado de los consumer groups. Repite tres veces el mismo
 > token `demo_...` en diez segundos y comprueba 429. No uses tarjetas reales.
 > 5. Solo despues cambia `kafkaEnabled` a true en el frontend, reconstruye y
 > publica en la EC2 Angular. Comprueba que login MSAL, catalogo, carrito y
