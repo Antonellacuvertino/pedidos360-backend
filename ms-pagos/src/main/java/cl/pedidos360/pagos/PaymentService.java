@@ -38,9 +38,10 @@ public class PaymentService {
     }
 
     @Transactional
-    public PagoResponse simular(PagoRequest request) {
+    public PagoResponse simular(PagoRequest request, String usuarioId) {
         Instant now = Instant.now();
-        String fingerprint = fingerprint(request.metodoPagoToken());
+        String fingerprint = fingerprint("usuario:" + usuarioId);
+        repository.ensureExists(fingerprint);
         PaymentVelocity velocity = repository.findById(fingerprint)
                 .orElseGet(() -> new PaymentVelocity(fingerprint));
         boolean accepted = velocity.registerAttempt(now);
@@ -49,7 +50,7 @@ public class PaymentService {
         String status = accepted ? "APROBADO_SIMULADO" : "BLOQUEADO";
         UUID eventId = UUID.randomUUID();
         PaymentAttemptEvent event = new PaymentAttemptEvent(
-                eventId, request.clienteId(), fingerprint, request.monto(), status, now);
+                eventId, usuarioId, fingerprint(request.metodoPagoToken()), request.monto(), status, now);
         if (streamingEnabled) {
             kafka.send(KafkaTopics.PAYMENT_ATTEMPTS, fingerprint, event)
                     .whenComplete((result, error) -> {
@@ -62,8 +63,17 @@ public class PaymentService {
             log.warn("Intento de pago bloqueado. eventId={} clienteId={}", eventId, request.clienteId());
         }
         return new PagoResponse(eventId, status,
-                accepted ? "Pago de prueba aprobado; no se cobro dinero" : "Token de prueba bloqueado por 30 minutos", now);
+                accepted ? "Pago de prueba aprobado; no se cobro dinero" : "Usuario bloqueado por 30 minutos", now);
     }
+
+    @Transactional
+    public FraudStatus estado(String usuarioId) {
+        Instant until = repository.findById(fingerprint("usuario:" + usuarioId))
+                .map(PaymentVelocity::getBlockedUntil).orElse(null);
+        return new FraudStatus(until != null && Instant.now().isBefore(until), until);
+    }
+
+    public record FraudStatus(boolean bloqueado, Instant bloqueadoHasta) { }
 
     private String fingerprint(String token) {
         try {

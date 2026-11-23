@@ -4,6 +4,10 @@ Esta etapa **agrega** streaming a la arquitectura anterior. RabbitMQ sigue
 procesando pedidos, stock, notificaciones y auditoria. Kafka conserva eventos
 para analitica; no reemplaza esas colas.
 
+Para el laboratorio NUEVO y la revision del bloqueo de compras consultar
+[VALIDACION_Y_LAB_NUEVO.md](VALIDACION_Y_LAB_NUEVO.md). Los IDs AWS citados
+mas abajo pertenecen al laboratorio anterior, no deben reutilizarse.
+
 ## Estado comprobado
 
 - `mvn test` del reactor completo: sin fallos el 23-11-2026.
@@ -16,8 +20,10 @@ para analitica; no reemplaza esas colas.
   locales se detuvieron despues de la prueba para liberar memoria, sin borrar
   los volumenes. Para repetir la demo, ejecutar `docker compose -f
   deploy/compose.kafka.yml up -d`.
-- **Pendiente:** probar una publicacion y consumo reales desde los
-  microservicios en Kafka UI. **Pendiente:** desplegar las tres EC2 nuevas,
+- Publicacion de prueba y consumo real por ms-analytics comprobados con
+  KafkaRuntimeTest, incluidos DLT y recuperacion. PostgreSQL real comprobo
+  concurrencia del bloqueo con PostgresFraudRuntimeTest.
+- **Pendiente:** desplegar las EC2 del laboratorio nuevo,
   rutas del API Gateway y frontend actualizado en AWS.
 - No se ha integrado Webpay real. El pago de `ms-pagos` es una simulacion y
   nunca debe presentarse como cobro o boleta tributaria.
@@ -76,17 +82,21 @@ modo que las vistas del mismo usuario conservan orden por particion.
 Activar `KAFKA_ENABLED=true` solo cuando el cluster este disponible.
 
 `ms-pagos` acepta `POST /pagos/simular` con un token **ficticio** `demo_...`.
-Los dos primeros intentos del mismo token en diez segundos se aprueban en
+Los dos primeros intentos del mismo usuario autenticado en diez segundos se aprueban en
 modo simulado; el tercero devuelve 429 y bloquea 30 minutos. No se aceptan
 numeros de tarjeta. El token se convierte en huella SHA-256 con un pepper
-privado antes de persistir o publicar. Definir
+privado antes de publicar. El estado de fraude se vincula al usuario del JWT,
+no al clienteId del formulario. El carrito usa /pedidos/lote para contar una
+sola solicitud por compra; /pedidos tambien exige autorizacion de ms-pagos.
+Definir
 `PAYMENT_FINGERPRINT_PEPPER` aleatorio y privado en la EC2 de pagos.
 
 `ms-analytics` usa los grupos `analytics-product-views` y
 `analytics-payment-attempts`. Guarda un evento solo una vez por `eventId`,
 calcula tres metricas y sugiere IDs de productos populares en la ultima
-categoria vista por el usuario. Una categoria con un solo producto puede
-devolver una lista vacia: crear otro producto de esa categoria para la demo.
+categoria vista por el usuario. Si no hay alternativas devuelve el ultimo
+producto seleccionado; sin historial devuelve una lista vacia. Las selecciones
+de carrito tambien se publican en product-views con accion CARRITO.
 
 Cuando falle un consumidor, `DefaultErrorHandler` reintenta dos veces y
 manda el evento a `product-views-dlt` o `payment-attempts-dlt` con su offset y
@@ -153,7 +163,7 @@ publicar Angular en su EC2. MSAL adjunta el access token a `/api/*`.
 5. **4:15-6:00.** Angular: abrir detalle de producto; Kafka UI muestra key,
    partition, offset y value en `product-views`. Mostrar recomendacion.
 6. **6:00-7:15.** Enviar un pago simulado; mostrar `payment-attempts`. Repetir
-   tres veces con el mismo token para evidenciar 429 y metrica de bloqueo.
+   tres veces con el mismo usuario para evidenciar 429 y metrica de bloqueo.
 7. **7:15-8:30.** Como Admin, crear/editar/eliminar un topico de prueba con
    Postman; como Operador, demostrar 403. No eliminar los topicos del sistema.
 

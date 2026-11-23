@@ -1,6 +1,9 @@
 package cl.pedidos360.pagos;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import jakarta.persistence.ElementCollection;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -12,6 +15,8 @@ public class PaymentVelocity {
     private int attempts;
     private Instant windowStartedAt;
     private Instant blockedUntil;
+    @ElementCollection
+    private List<Instant> recentAttempts = new ArrayList<>();
 
     protected PaymentVelocity() {
     }
@@ -29,12 +34,14 @@ public class PaymentVelocity {
         if (blockedUntil != null && now.isBefore(blockedUntil)) {
             return false;
         }
-        if (windowStartedAt == null || !now.isBefore(windowStartedAt.plusSeconds(10))) {
-            windowStartedAt = now;
-            attempts = 0;
+        if (blockedUntil != null) {
+            recentAttempts.clear();
             blockedUntil = null;
         }
-        attempts++;
+        recentAttempts.removeIf(attempt -> !attempt.isAfter(now.minusSeconds(10)));
+        recentAttempts.add(now);
+        attempts = recentAttempts.size();
+        windowStartedAt = recentAttempts.get(0);
         if (attempts >= 3) {
             blockedUntil = now.plusSeconds(1800);
             return false;

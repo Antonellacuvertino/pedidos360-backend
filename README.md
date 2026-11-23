@@ -1,8 +1,12 @@
 # Backend Pedidos360
 
+Revision de fraude, recomendaciones y nuevo laboratorio:
+[VALIDACION_Y_LAB_NUEVO.md](docs/VALIDACION_Y_LAB_NUEVO.md).
+No desplegar ms-pedidos actualizado sin ms-pagos disponible y PAGOS_URL configurado.
+
 Backend multi-modulo construido con Java 21 y Spring Boot. Incluye seguridad JWT con Microsoft Entra ID, RabbitMQ, PostgreSQL y los modulos Kafka de EP5.
 
-**Estado EP5 (23-11-2026):** el codigo nuevo compila y las pruebas unitarias/JPA pasan. En Docker local se verificaron ZooKeeper, tres brokers, Kafka UI y dos topicos de negocio con tres particiones y tres replicas. **No se ha verificado aun la publicacion/consumo de los microservicios ni se ha desplegado EP5 en AWS.** El frontend mantiene `kafkaEnabled: false` hasta completar el despliegue. Ver [docs/EP5_IMPLEMENTACION.md](docs/EP5_IMPLEMENTACION.md) para los pasos y evidencias pendientes.
+**Estado EP5 (23-11-2026):** compilan backend y frontend. Se verificaron tres brokers, dos topicos de negocio con tres particiones/tres replicas, consumo real por ms-analytics, recomendaciones y recuperacion mediante DLT. PostgreSQL real paso la prueba de tres intentos concurrentes y bloqueo persistido. **Falta validar el flujo completo con JWT real en el nuevo laboratorio AWS.** El frontend mantiene `kafkaEnabled: false` hasta completar el despliegue. Ver [VALIDACION_Y_LAB_NUEVO.md](docs/VALIDACION_Y_LAB_NUEVO.md) para evidencias y pasos.
 
 El despliegue con una EC2 por microservicio, rutas explicitas del API Gateway
 y acceso a RabbitMQ esta documentado en

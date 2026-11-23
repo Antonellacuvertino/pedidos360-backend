@@ -9,7 +9,12 @@ public record ProductViewEvent(
         String usuarioId,
         Long productoId,
         String categoria,
-        Instant fecha) {
+        Instant fecha,
+        String accion) {
+
+    public ProductViewEvent(UUID eventId, String usuarioId, Long productoId, String categoria, Instant fecha) {
+        this(eventId, usuarioId, productoId, categoria, fecha, "VISTA");
+    }
 
     public ProductViewEvent {
         Objects.requireNonNull(eventId, "eventId");

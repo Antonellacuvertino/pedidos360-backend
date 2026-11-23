@@ -9,6 +9,15 @@ import org.junit.jupiter.api.Test;
 
 class PaymentVelocityTest {
     @Test
+    void countsSlidingWindowAcrossOriginalBoundary() {
+        PaymentVelocity velocity = new PaymentVelocity("fingerprint");
+        Instant start = Instant.parse("2026-11-16T10:00:00Z");
+        assertTrue(velocity.registerAttempt(start));
+        assertTrue(velocity.registerAttempt(start.plusSeconds(9)));
+        assertTrue(velocity.registerAttempt(start.plusSeconds(10)));
+        assertFalse(velocity.registerAttempt(start.plusSeconds(11)));
+    }
+    @Test
     void blocksThirdAttemptAndResetsAfterThirtyMinutes() {
         PaymentVelocity velocity = new PaymentVelocity("fingerprint");
         Instant start = Instant.parse("2026-11-16T10:00:00Z");

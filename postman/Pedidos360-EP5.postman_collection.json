@@ -5,7 +5,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "api_gateway_url", "value": "https://2iguro8kei.execute-api.us-east-1.amazonaws.com" },
+    { "key": "api_gateway_url", "value": "" },
     { "key": "access_token", "value": "", "type": "secret" },
     { "key": "producto_id", "value": "1" },
     { "key": "demo_topic", "value": "demo-ep5-admin" }
@@ -36,7 +36,7 @@
       }
     },
     {
-      "name": "04 POST pago simulado - repetir 4 veces en 10 segundos",
+      "name": "04 POST pago simulado - tercer intento en 10 segundos bloquea usuario",
       "request": {
         "method": "POST",
         "header": [
@@ -111,6 +111,44 @@
         "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
         "url": "{{api_gateway_url}}/api/v1/kafka/topics/{{demo_topic}}"
       }
+    },
+    {
+      "name": "11 POST seleccion de carrito - publica product-views",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"accion\":\"CARRITO\"}" },
+        "url": "{{api_gateway_url}}/api/v1/productos/{{producto_id}}/interacciones"
+      }
+    },
+    {
+      "name": "12 GET estado tras tres intentos - bloqueado true",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/pagos/estado"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Bloqueo persistido', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().bloqueado).to.eql(true); });"
+      ] } }]
+    },
+    {
+      "name": "13 POST compra con usuario bloqueado - 429 y sin orden nueva",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"items\":[{\"clienteId\":1,\"productoId\":{{producto_id}},\"cantidad\":1,\"total\":1000}]}" },
+        "url": "{{api_gateway_url}}/api/v1/pedidos/lote"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Compra bloqueada', () => pm.response.to.have.status(429));"
+      ] } }]
     }
   ]
 }

@@ -48,4 +48,18 @@ public class ProductoController {
     public Producto crear(@Valid @RequestBody Producto producto) {
         return repository.save(producto);
     }
+
+    @PostMapping("/{id}/interacciones")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    public ResponseEntity<Void> interaccion(@PathVariable Long id,
+            @Valid @RequestBody Interaccion request, @AuthenticationPrincipal Jwt jwt) {
+        return repository.findById(id).map(producto -> {
+            viewPublisher.publicar(jwt.getClaimAsString("oid") != null
+                    ? jwt.getClaimAsString("oid") : jwt.getSubject(), producto, request.accion().name());
+            return ResponseEntity.accepted().<Void>build();
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    public enum Accion { VISTA, CARRITO }
+    public record Interaccion(@jakarta.validation.constraints.NotNull Accion accion) { }
 }

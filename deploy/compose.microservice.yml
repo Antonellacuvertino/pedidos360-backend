@@ -17,6 +17,7 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Define RABBITMQ_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092,localhost:9093,localhost:9094}
       KAFKA_ENABLED: ${KAFKA_ENABLED:-false}
+      PAGOS_URL: ${PAGOS_URL:-http://ms-pagos:8087}
       SMTP_ENABLED: ${SMTP_ENABLED:-false}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}

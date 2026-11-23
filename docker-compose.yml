@@ -117,9 +117,27 @@ services:
     build:
       context: .
       dockerfile: ms-pedidos/Dockerfile
-    environment: *app-environment
+    environment:
+      <<: *app-environment
+      PAGOS_URL: http://ms-pagos:8087
     ports: ["8083:8083"]
     depends_on: *app-dependencies
+    restart: unless-stopped
+    networks: [pedidos360]
+
+  ms-pagos:
+    build:
+      context: .
+      dockerfile: ms-pagos/Dockerfile
+    environment:
+      <<: *app-environment
+      PAYMENT_FINGERPRINT_PEPPER: ${PAYMENT_FINGERPRINT_PEPPER:?Define PAYMENT_FINGERPRINT_PEPPER}
+      KAFKA_ENABLED: ${KAFKA_ENABLED:-false}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-host.docker.internal:9092}
+    ports: ["8087:8087"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     networks: [pedidos360]
 

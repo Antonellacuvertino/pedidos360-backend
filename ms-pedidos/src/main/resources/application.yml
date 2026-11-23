@@ -36,5 +36,6 @@ management:
         include: health,info
 
 pedidos360:
+  pagos-url: ${PAGOS_URL:http://localhost:8087}
   security:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}

@@ -27,11 +27,15 @@ public class ProductViewPublisher {
     }
 
     public void publicar(String usuarioId, Producto producto) {
+        publicar(usuarioId, producto, "VISTA");
+    }
+
+    public void publicar(String usuarioId, Producto producto, String accion) {
         if (!enabled) {
             return;
         }
         ProductViewEvent event = new ProductViewEvent(
-                UUID.randomUUID(), usuarioId, producto.getId(), producto.getCategoria(), Instant.now());
+                UUID.randomUUID(), usuarioId, producto.getId(), producto.getCategoria(), Instant.now(), accion);
         kafka.send(KafkaTopics.PRODUCT_VIEWS, usuarioId, event)
                 .whenComplete((result, error) -> {
                     if (error != null) {

@@ -32,6 +32,9 @@ public class AnalyticsController {
         List<Long> seen = views.viewedBy(userId);
         List<Long> suggested = views.popularInCategory(last.getCategoria(), PageRequest.of(0, 20))
                 .stream().filter(id -> !seen.contains(id)).limit(5).toList();
+        if (suggested.isEmpty()) {
+            suggested = List.of(last.getProductoId());
+        }
         return new Recommendations(last.getCategoria(), suggested);
     }
 

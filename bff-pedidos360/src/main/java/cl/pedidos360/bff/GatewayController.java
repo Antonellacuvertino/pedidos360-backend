@@ -96,6 +96,20 @@ public class GatewayController {
         return ResponseEntity.accepted().body(aceptado);
     }
 
+    @PostMapping("/pedidos/lote")
+    @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
+    public ResponseEntity<PedidoAceptadoDto[]> crearCompra(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @Valid @RequestBody Compra request) {
+        return ResponseEntity.accepted().body(restClient.post()
+                .uri(serviceUrls.pedidosUrl() + "/pedidos/lote")
+                .header(HttpHeaders.AUTHORIZATION, authorization).body(request)
+                .retrieve().body(PedidoAceptadoDto[].class));
+    }
+
+    public record Compra(@jakarta.validation.constraints.NotEmpty @jakarta.validation.constraints.Size(max = 50)
+            List<@jakarta.validation.constraints.NotNull @Valid NuevoPedidoRequest> items) { }
+
     @PostMapping("/notificaciones/prueba")
     @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public Map<?, ?> probarNotificacion(
