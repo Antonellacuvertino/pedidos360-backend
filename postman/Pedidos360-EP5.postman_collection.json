@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "Pedidos360 EP5 Kafka",
+    "description": "Importar junto a la coleccion anterior. El access token se pega solo en el entorno local de Postman; no exportarlo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "api_gateway_url", "value": "https://2iguro8kei.execute-api.us-east-1.amazonaws.com" },
+    { "key": "access_token", "value": "", "type": "secret" },
+    { "key": "producto_id", "value": "1" },
+    { "key": "demo_topic", "value": "demo-ep5-admin" }
+  ],
+  "item": [
+    {
+      "name": "01 GET detalle producto - publica product-views",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/productos/{{producto_id}}"
+      }
+    },
+    {
+      "name": "02 GET metricas de analitica",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/analitica/resumen"
+      }
+    },
+    {
+      "name": "03 GET recomendaciones",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/analitica/recomendaciones"
+      }
+    },
+    {
+      "name": "04 POST pago simulado - repetir 4 veces en 10 segundos",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": \"demo-cliente\",\n  \"pedidoId\": \"demo-pedido\",\n  \"monto\": 1000,\n  \"metodoPagoToken\": \"demo_tarjeta01\"\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/pagos/simular"
+      }
+    },
+    {
+      "name": "05 GET topicos Kafka",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/kafka/topics"
+      }
+    },
+    {
+      "name": "06 GET detalle payment-attempts",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/kafka/topics/payment-attempts"
+      }
+    },
+    {
+      "name": "07 POST topico de prueba - Admin 201, Operador 403",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{demo_topic}}\",\n  \"partitions\": 3,\n  \"replicationFactor\": 3,\n  \"retentionMs\": 86400000,\n  \"cleanupPolicy\": \"delete\"\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/kafka/topics"
+      }
+    },
+    {
+      "name": "08 PUT configuracion topico de prueba",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"partitions\": 4,\n  \"retentionMs\": 172800000,\n  \"cleanupPolicy\": \"delete\",\n  \"minInSyncReplicas\": 2\n}"
+        },
+        "url": "{{api_gateway_url}}/api/v1/kafka/topics/{{demo_topic}}"
+      }
+    },
+    {
+      "name": "09 GET grupos de consumidores",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/kafka/groups"
+      }
+    },
+    {
+      "name": "10 DELETE topico de prueba",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{api_gateway_url}}/api/v1/kafka/topics/{{demo_topic}}"
+      }
+    }
+  ]
+}

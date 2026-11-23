@@ -4,5 +4,6 @@ target_test-classes/
 application-local.yml
 .env
 deploy/.env.node
+deploy/.env.kafka
 .idea/
 *.iml

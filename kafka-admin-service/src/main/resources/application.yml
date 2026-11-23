@@ -1,0 +1,21 @@
+server:
+  port: 8090
+spring:
+  application:
+    name: kafka-admin-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0
+          audiences: ${AZURE_API_AUDIENCE:7d7e6f82-35dc-4fd2-b580-7776c558d963}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+pedidos360:
+  security:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}

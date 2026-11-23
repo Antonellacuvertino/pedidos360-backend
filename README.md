@@ -1,6 +1,8 @@
 # Backend Pedidos360
 
-Backend multi-modulo construido con Java 21 y Spring Boot. Incluye seguridad JWT con Microsoft Entra ID, procesamiento asincrono con RabbitMQ, PostgreSQL y despliegue por contenedores.
+Backend multi-modulo construido con Java 21 y Spring Boot. Incluye seguridad JWT con Microsoft Entra ID, RabbitMQ, PostgreSQL y los modulos Kafka de EP5.
+
+**Estado EP5 (23-11-2026):** el codigo nuevo compila y las pruebas unitarias/JPA pasan. En Docker local se verificaron ZooKeeper, tres brokers, Kafka UI y dos topicos de negocio con tres particiones y tres replicas. **No se ha verificado aun la publicacion/consumo de los microservicios ni se ha desplegado EP5 en AWS.** El frontend mantiene `kafkaEnabled: false` hasta completar el despliegue. Ver [docs/EP5_IMPLEMENTACION.md](docs/EP5_IMPLEMENTACION.md) para los pasos y evidencias pendientes.
 
 El despliegue con una EC2 por microservicio, rutas explicitas del API Gateway
 y acceso a RabbitMQ esta documentado en
@@ -10,7 +12,7 @@ La configuracion de usuarios invitados, roles y correo esta en
 
 ## Despliegue cloud actual
 
-Recursos en `us-east-1`, actualizados el 14 de octubre de 2026:
+Recursos de la etapa anterior en `us-east-1` (verificar estado actual en AWS antes de presentar):
 
 | Recurso | Identificador o URL |
 | --- | --- |
@@ -34,9 +36,11 @@ Recursos en `us-east-1`, actualizados el 14 de octubre de 2026:
 El Gateway usa rutas explicitas con `pedidos.read` para GET y
 `pedidos.write` para POST. Conecta por VPC Link al ALB interno; cada target
 group apunta a una EC2 distinta. La ruta `ANY /api/{proxy+}` permanece como
-respaldo para endpoints no migrados. El panel RabbitMQ no se expone al publico:
-abrirlo con `deploy/conectar-rabbitmq.ps1 -CopiarClave` en
-`http://localhost:15672`.
+respaldo para endpoints no migrados. El acceso recomendado al panel RabbitMQ
+es el tunel de `deploy/conectar-rabbitmq.ps1 -CopiarClave` en
+`http://localhost:15672`. **Revisar el security group de la EC2 base:** en una
+comprobacion previa los puertos 15672-15673 estaban abiertos a Internet por
+HTTP. No dejar esa regla en un despliegue definitivo.
 
 Pruebas rapidas del gateway:
 
@@ -83,8 +87,12 @@ VPC Link -> ALB interno
 | `notifications-service` | 8084 | Consume eventos y envia o simula correo. |
 | `rabbit-admin-service` | 8085 | API REST para colas, exchanges y bindings. |
 | `ms-auditoria` | 8086 | Microservicio adicional; registra eventos de compra. |
+| `ms-pagos` | 8087 | Pago simulado, control de frecuencia y productor `payment-attempts`. |
+| `ms-analytics` | 8089 | Consume dos topicos y calcula metricas y recomendaciones. |
+| `kafka-admin-service` | 8090 | Administra topicos y grupos; cambios protegidos por rol Admin. |
 | `common-security` | - | Validacion compartida de issuer, audience, firma, scopes y roles. |
 | `common-messaging` | - | Eventos y topologia RabbitMQ centralizada. |
+| `common-streaming` | - | Contratos tipados y nombres de topicos Kafka. |
 
 ## Mensajeria
 

@@ -21,6 +21,14 @@ spring:
       simple:
         acknowledge-mode: manual
         default-requeue-rejected: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
   security:
     oauth2:
       resourceserver:
@@ -35,5 +43,7 @@ management:
         include: health,info
 
 pedidos360:
+  streaming:
+    enabled: ${KAFKA_ENABLED:false}
   security:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}

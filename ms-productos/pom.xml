@@ -21,6 +21,15 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>cl.pedidos360</groupId>
+            <artifactId>common-streaming</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
