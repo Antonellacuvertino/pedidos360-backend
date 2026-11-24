@@ -25,7 +25,7 @@ services:
       RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:?Define RABBITMQ_ERLANG_COOKIE}
     ports:
       - "5672:5672"
-      - "127.0.0.1:15672:15672"
+      - "${MGMT_BIND_ADDRESS:-127.0.0.1}:15672:15672"
     volumes:
       - rabbitmq-1-data:/var/lib/rabbitmq
       - ./rabbitmq-cluster.conf:/etc/rabbitmq/rabbitmq.conf:ro
@@ -41,7 +41,7 @@ services:
     hostname: rabbitmq-2
     ports:
       - "5673:5672"
-      - "127.0.0.1:15673:15672"
+      - "${MGMT_BIND_ADDRESS:-127.0.0.1}:15673:15672"
     volumes:
       - rabbitmq-2-data:/var/lib/rabbitmq
       - ./rabbitmq-cluster.conf:/etc/rabbitmq/rabbitmq.conf:ro

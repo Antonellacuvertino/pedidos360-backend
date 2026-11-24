@@ -114,7 +114,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
       JAVA_TOOL_OPTIONS: -Xms128m -Xmx384m
     ports:
-      - "127.0.0.1:${KAFKA_UI_PORT:-8088}:8080"
+      - "${MGMT_BIND_ADDRESS:-127.0.0.1}:${KAFKA_UI_PORT:-8088}:8080"
     restart: unless-stopped
 
 volumes:
