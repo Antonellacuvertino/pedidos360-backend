@@ -1,0 +1,15 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /workspace
+COPY . .
+RUN mvn -B package -DskipTests
+RUN set -eu; mkdir /artifacts; \
+    for service in ms-productos ms-clientes ms-pedidos notifications-service \
+      rabbit-admin-service ms-auditoria ms-pagos ms-analytics kafka-admin-service bff-pedidos360; do \
+      cp "$service/target/$service-0.0.1-SNAPSHOT.jar" "/artifacts/$service.jar"; \
+    done
+
+FROM eclipse-temurin:21-jre-alpine
+RUN addgroup -S spring && adduser -S spring -G spring
+WORKDIR /app
+COPY --from=build /artifacts/ /app/
+USER spring

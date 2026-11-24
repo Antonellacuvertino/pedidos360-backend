@@ -1,0 +1,100 @@
+# EC2 backend: diez procesos independientes; imagen compilada una sola vez.
+x-environment: &environment
+  AZURE_TENANT_ID: ${AZURE_TENANT_ID:?Define AZURE_TENANT_ID}
+  AZURE_API_AUDIENCE: ${AZURE_API_AUDIENCE:?Define AZURE_API_AUDIENCE}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?Define CORS_ALLOWED_ORIGINS}
+  DB_HOST: ${DB_HOST:?Define DB_HOST}
+  DB_PORT: ${DB_PORT:-5432}
+  DB_NAME: ${DB_NAME:-pedidos360}
+  DB_USER: ${DB_USER:?Define DB_USER}
+  DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD}
+  RABBITMQ_ADDRESSES: ${RABBITMQ_ADDRESSES:?Define RABBITMQ_ADDRESSES}
+  RABBITMQ_USER: ${RABBITMQ_USER:?Define RABBITMQ_USER}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Define RABBITMQ_PASSWORD}
+  KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:?Define KAFKA_BOOTSTRAP_SERVERS}
+  KAFKA_ENABLED: "true"
+  JAVA_TOOL_OPTIONS: -Xms128m -Xmx512m -XX:ActiveProcessorCount=2
+
+x-app: &app
+  image: pedidos360/backend:ep6
+  restart: unless-stopped
+  environment: *environment
+  mem_limit: 1g
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  ms-productos:
+    <<: *app
+    command: ["java", "-jar", "/app/ms-productos.jar"]
+    ports: ["8081:8081"]
+
+  ms-clientes:
+    <<: *app
+    command: ["java", "-jar", "/app/ms-clientes.jar"]
+    ports: ["8082:8082"]
+
+  ms-pedidos:
+    <<: *app
+    command: ["java", "-jar", "/app/ms-pedidos.jar"]
+    ports: ["8083:8083"]
+    environment:
+      <<: *environment
+      PAGOS_URL: ${PAGOS_URL:-http://ms-pagos:8087}
+
+  notifications-service:
+    <<: *app
+    command: ["java", "-jar", "/app/notifications-service.jar"]
+    ports: ["8084:8084"]
+    environment:
+      <<: *environment
+      SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+
+  rabbit-admin-service:
+    <<: *app
+    command: ["java", "-jar", "/app/rabbit-admin-service.jar"]
+    ports: ["8085:8085"]
+
+  ms-auditoria:
+    <<: *app
+    command: ["java", "-jar", "/app/ms-auditoria.jar"]
+    ports: ["8086:8086"]
+
+  ms-pagos:
+    <<: *app
+    command: ["java", "-jar", "/app/ms-pagos.jar"]
+    ports: ["8087:8087"]
+    environment:
+      <<: *environment
+      PAYMENT_FINGERPRINT_PEPPER: ${PAYMENT_FINGERPRINT_PEPPER:?Define PAYMENT_FINGERPRINT_PEPPER}
+
+  ms-analytics:
+    <<: *app
+    command: ["java", "-jar", "/app/ms-analytics.jar"]
+    ports: ["8089:8089"]
+
+  kafka-admin-service:
+    <<: *app
+    command: ["java", "-jar", "/app/kafka-admin-service.jar"]
+    ports: ["8090:8090"]
+
+  bff-pedidos360:
+    <<: *app
+    command: ["java", "-jar", "/app/bff-pedidos360.jar"]
+    ports: ["8080:8080"]
+    environment:
+      <<: *environment
+      PRODUCTOS_URL: ${PRODUCTOS_URL:-http://ms-productos:8081}
+      CLIENTES_URL: ${CLIENTES_URL:-http://ms-clientes:8082}
+      PEDIDOS_URL: ${PEDIDOS_URL:-http://ms-pedidos:8083}
+      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL:-http://notifications-service:8084}
+      RABBIT_ADMIN_URL: ${RABBIT_ADMIN_URL:-http://rabbit-admin-service:8085}
+      AUDITORIA_URL: ${AUDITORIA_URL:-http://ms-auditoria:8086}

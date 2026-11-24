@@ -5,5 +5,8 @@ application-local.yml
 .env
 deploy/.env.node
 deploy/.env.kafka
+.deploy-state/
+__pycache__/
+*.pyc
 .idea/
 *.iml

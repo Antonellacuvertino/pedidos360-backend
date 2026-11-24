@@ -1,0 +1,55 @@
+# Solo PostgreSQL y RabbitMQ para la EC2 base del laboratorio nuevo.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pedidos360}
+      POSTGRES_USER: ${DB_USER:-pedidos360}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD}
+    ports: ["5432:5432"]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pedidos360} -d ${DB_NAME:-pedidos360}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  rabbitmq-1: &rabbit
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq-1
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-pedidos360}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Define RABBITMQ_PASSWORD}
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:?Define RABBITMQ_ERLANG_COOKIE}
+    ports:
+      - "5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-1-data:/var/lib/rabbitmq
+      - ./rabbitmq-cluster.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    restart: unless-stopped
+
+  rabbitmq-2:
+    <<: *rabbit
+    hostname: rabbitmq-2
+    ports:
+      - "5673:5672"
+      - "127.0.0.1:15673:15672"
+    volumes:
+      - rabbitmq-2-data:/var/lib/rabbitmq
+      - ./rabbitmq-cluster.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    depends_on:
+      rabbitmq-1:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  rabbitmq-1-data:
+  rabbitmq-2-data:

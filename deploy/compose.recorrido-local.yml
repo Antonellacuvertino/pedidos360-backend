@@ -1,0 +1,153 @@
+# Ensayo local aislado. No usar estas credenciales en AWS.
+name: pedidos360-recorrido
+
+x-environment: &environment
+  AZURE_TENANT_ID: e5372bf0-c5e3-4286-887c-79069f209c1f
+  AZURE_API_AUDIENCE: 7d7e6f82-35dc-4fd2-b580-7776c558d963
+  CORS_ALLOWED_ORIGINS: http://localhost:4200
+  DB_HOST: postgres
+  DB_NAME: pedidos360
+  DB_USER: pedidos360
+  DB_PASSWORD: recorrido-local
+  RABBITMQ_ADDRESSES: rabbit-local-1:5672,rabbit-local-2:5672
+  RABBITMQ_USER: pedidos360
+  RABBITMQ_PASSWORD: recorrido-local
+  KAFKA_ENABLED: "true"
+  KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
+  PAYMENT_FINGERPRINT_PEPPER: solo-ensayo-local-no-produccion
+  SMTP_ENABLED: "false"
+  PAGOS_URL: http://ms-pagos:8087
+  PRODUCTOS_URL: http://ms-productos:8081
+  CLIENTES_URL: http://ms-clientes:8082
+  PEDIDOS_URL: http://ms-pedidos:8083
+  NOTIFICATIONS_URL: http://notifications-service:8084
+  RABBIT_ADMIN_URL: http://rabbit-admin-service:8085
+  AUDITORIA_URL: http://ms-auditoria:8086
+  JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m
+
+x-java: &java
+  image: eclipse-temurin:21-jre-alpine
+  environment: *environment
+  networks: [default, kafka]
+  depends_on:
+    postgres:
+      condition: service_healthy
+    rabbit-local-1:
+      condition: service_healthy
+    rabbit-local-2:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pedidos360
+      POSTGRES_USER: pedidos360
+      POSTGRES_PASSWORD: recorrido-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pedidos360 -d pedidos360"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbit-local-1: &rabbit
+    image: rabbitmq:3.13-management
+    hostname: rabbit-local-1
+    environment:
+      RABBITMQ_ERLANG_COOKIE: recorrido-local-cookie
+      RABBITMQ_DEFAULT_USER: pedidos360
+      RABBITMQ_DEFAULT_PASS: recorrido-local
+    volumes:
+      - rabbit-1-data:/var/lib/rabbitmq
+    ports: ["127.0.0.1:15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+  rabbit-local-2:
+    <<: *rabbit
+    hostname: rabbit-local-2
+    volumes:
+      - rabbit-2-data:/var/lib/rabbitmq
+      - ./rabbitmq-local.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    ports: ["127.0.0.1:15673:15672"]
+    depends_on:
+      rabbit-local-1:
+        condition: service_healthy
+
+  ms-productos:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../ms-productos/target/ms-productos-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8081:8081"]
+
+  ms-clientes:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../ms-clientes/target/ms-clientes-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8082:8082"]
+
+  ms-pedidos:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../ms-pedidos/target/ms-pedidos-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8083:8083"]
+
+  notifications-service:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../notifications-service/target/notifications-service-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8084:8084"]
+
+  rabbit-admin-service:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../rabbit-admin-service/target/rabbit-admin-service-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8085:8085"]
+
+  ms-auditoria:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../ms-auditoria/target/ms-auditoria-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8086:8086"]
+
+  ms-pagos:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../ms-pagos/target/ms-pagos-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8087:8087"]
+
+  ms-analytics:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../ms-analytics/target/ms-analytics-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8089:8089"]
+
+  bff-pedidos360:
+    <<: *java
+    command: ["java", "-jar", "/app/app.jar"]
+    volumes:
+      - ../bff-pedidos360/target/bff-pedidos360-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports: ["127.0.0.1:8080:8080"]
+
+volumes:
+  postgres-data:
+  rabbit-1-data:
+  rabbit-2-data:
+
+networks:
+  kafka:
+    external: true
+    name: ${KAFKA_DOCKER_NETWORK:-deploy_default}

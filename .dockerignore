@@ -4,3 +4,12 @@
 **/target
 *.log
 .env
+.env.*
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+.aws
+.deploy-state
+**/__pycache__
+**/*.pyc

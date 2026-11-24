@@ -1,22 +1,55 @@
 services:
-  zookeeper:
+  zookeeper-1: &zookeeper
     image: confluentinc/cp-zookeeper:7.5.0
-    environment:
+    environment: &zookeeper-env
+      ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 10
+      ZOOKEEPER_SYNC_LIMIT: 5
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: srvr,ruok,mntr
       KAFKA_HEAP_OPTS: -Xms128m -Xmx256m
     volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
-      - zookeeper-log:/var/lib/zookeeper/log
+      - zookeeper-1-data:/var/lib/zookeeper/data
+      - zookeeper-1-log:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD", "cub", "zk-ready", "localhost", "2181", "10"]
+      interval: 10s
+      timeout: 15s
+      retries: 12
     restart: unless-stopped
+
+  zookeeper-2:
+    <<: *zookeeper
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 2
+    volumes:
+      - zookeeper-2-data:/var/lib/zookeeper/data
+      - zookeeper-2-log:/var/lib/zookeeper/log
+
+  zookeeper-3:
+    <<: *zookeeper
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 3
+    volumes:
+      - zookeeper-3-data:/var/lib/zookeeper/data
+      - zookeeper-3-log:/var/lib/zookeeper/log
 
   kafka-1: &broker
     image: confluentinc/cp-kafka:7.5.0
     depends_on:
-      - zookeeper
+      zookeeper-1:
+        condition: service_healthy
+      zookeeper-2:
+        condition: service_healthy
+      zookeeper-3:
+        condition: service_healthy
     environment: &broker-env
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:29092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
@@ -85,8 +118,12 @@ services:
     restart: unless-stopped
 
 volumes:
-  zookeeper-data:
-  zookeeper-log:
+  zookeeper-1-data:
+  zookeeper-1-log:
+  zookeeper-2-data:
+  zookeeper-2-log:
+  zookeeper-3-data:
+  zookeeper-3-log:
   kafka-1-data:
   kafka-2-data:
   kafka-3-data:

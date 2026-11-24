@@ -1,5 +1,13 @@
 # Backend Pedidos360
 
+Actualizacion EP6 (24-11-2026): [despliegue necesario](docs/DESPLIEGUE_MINIMO_EP5_EP6.md)
+y [prompt para Claude](docs/PROMPT_CLAUDE_AWS_EP5.md). Compose Kafka ahora define
+tres ZooKeeper y tres brokers. El arranque de esta nueva topologia en cloud
+esta pendiente; las pruebas anteriores usaron un solo ZooKeeper.
+
+Ensayo sin AWS: [recorrido local](docs/RECORRIDO_LOCAL.md), con login Microsoft,
+PostgreSQL y mensajeria reales, pagos simulados y correo desactivado.
+
 Revision de fraude, recomendaciones y nuevo laboratorio:
 [VALIDACION_Y_LAB_NUEVO.md](docs/VALIDACION_Y_LAB_NUEVO.md).
 No desplegar ms-pedidos actualizado sin ms-pagos disponible y PAGOS_URL configurado.

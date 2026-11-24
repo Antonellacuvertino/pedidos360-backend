@@ -1,5 +1,11 @@
 # Validacion de fraude, recomendaciones y laboratorio nuevo
 
+Revision 24-11-2026: consultar primero
+[DESPLIEGUE_MINIMO_EP5_EP6.md](DESPLIEGUE_MINIMO_EP5_EP6.md).
+EP6 exige tres ZooKeeper. La configuracion se actualizo, pero las pruebas
+Kafka descritas abajo corresponden al cluster anterior de un ZooKeeper.
+No ejecutar esta actualizacion sobre volumenes existentes sin migracion.
+
 ## Cambios del 23-11-2026
 
 - El fraude se evalua en cada solicitud de pago, con una ventana MOVIL de

@@ -1,5 +1,11 @@
 # EP5: Kafka en Pedidos360
 
+Revision EP6 del 24-11-2026: prevalece
+[DESPLIEGUE_MINIMO_EP5_EP6.md](DESPLIEGUE_MINIMO_EP5_EP6.md).
+El primer indicador EP6 requiere tres ZooKeeper: Compose fue actualizado,
+pero la nueva topologia aun debe arrancarse y verificarse en AWS.
+Las pruebas historicas descritas aqui usaron UN ZooKeeper y tres brokers.
+
 Esta etapa **agrega** streaming a la arquitectura anterior. RabbitMQ sigue
 procesando pedidos, stock, notificaciones y auditoria. Kafka conserva eventos
 para analitica; no reemplaza esas colas.
@@ -106,7 +112,10 @@ reales durante la presentacion si no se sabe limpiar la prueba.
 
 ## 3. Despliegue por EC2 y API Gateway
 
-Conservar las ocho EC2 anteriores. Para EP5 se requieren:
+La siguiente distribucion describe la ampliacion de la etapa anterior.
+En el laboratorio NUEVO recrear sus funciones, no conservar ni reutilizar
+las instancias antiguas. Seguir el plan ACTUAL de 5 EC2 del documento EP6.
+La ampliacion agrega:
 
 - Una EC2 para los tres brokers/ZooKeeper/Kafka UI, con memoria suficiente;
   estimar costo y cuota antes de encenderla.
@@ -127,8 +136,8 @@ curl -f http://localhost:PUERTO/actuator/health
 ```
 
 Agregar target groups del ALB interno con health check `/actuator/health`.
-Crear rutas **explicitas** en HTTP API `2iguro8kei`, con el JWT Authorizer
-actual, VPC Link y listener del ALB. Mantener el prefijo `/api/v1` solo para
+Crear rutas **explicitas** en la NUEVA HTTP API, con su JWT Authorizer,
+VPC Link y listener del ALB. Mantener el prefijo `/api/v1` solo para
 productos con ID y administracion Kafka; los paths fijos se reescriben:
 
 | Metodo y ruta publica | Servicio | Path en EC2 | Scope |
