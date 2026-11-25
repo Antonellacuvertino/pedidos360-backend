@@ -7,6 +7,8 @@ tres particiones, tres replicas y sus ISR completos. La usuaria confirmo
 login Microsoft, catalogo y vista Streaming desde la URL publica.
 Ver [despliegue necesario](docs/DESPLIEGUE_MINIMO_EP5_EP6.md) para la distribucion.
 Para preparar la presentacion, usar el [ensayo y mapa de codigo](docs/ENSAYO_PRESENTACION_EP6.md).
+La [revision del enunciado y AWS](docs/REVISION_EP6.md) describe los permisos,
+las rutas y que partes estan implementadas o son extras.
 
 Ensayo sin AWS: [recorrido local](docs/RECORRIDO_LOCAL.md), con login Microsoft,
 PostgreSQL y mensajeria reales, pagos simulados y correo desactivado.
@@ -148,7 +150,7 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 
 1. Angular envia `POST /api/v1/pedidos/lote` con JWT para confirmar el carrito.
 2. API Gateway valida el JWT y el scope `pedidos.write`; `ms-pedidos` valida otra vez firma, issuer, audience y vigencia.
-3. `ms-pedidos` consulta `ms-pagos` antes de publicar. Tres intentos en una ventana movil de 10 segundos bloquean al usuario por 30 minutos: responde 429 sin publicar la compra. Una tarjeta rechazada (`rechazoSimulado: true`) da 402, cuenta en el limite y no crea orden. Un pago de prueba aprobado publica `order.created` y responde `202 Accepted`.
+3. `ms-pedidos` consulta `ms-pagos` antes de publicar. El cuarto intento con la misma tarjeta en una ventana movil de 10 segundos bloquea esa tarjeta por 30 minutos. Un rechazo simulado da 402 y cuenta en el limite; un bloqueo da 429. Ninguno crea orden. Un pago de prueba aprobado publica `order.created` y responde `202 Accepted`.
 4. `orders.queue` guarda la orden.
 5. `stock.queue` descuenta inventario.
 6. `notifications.queue` envia o simula el correo.

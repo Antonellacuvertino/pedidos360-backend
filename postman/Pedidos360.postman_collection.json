@@ -82,7 +82,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"clienteId\": {{cliente_id}},\n  \"productoId\": {{producto_id}},\n  \"cantidad\": 1,\n  \"total\": {{precio_producto}},\n  \"estado\": \"RECIBIDO\",\n  \"email\": \"{{correo_destino}}\"\n}"
+          "raw": "{\n  \"clienteId\": {{cliente_id}},\n  \"productoId\": {{producto_id}},\n  \"cantidad\": 1,\n  \"total\": {{precio_producto}},\n  \"estado\": \"RECIBIDO\",\n  \"email\": \"{{correo_destino}}\",\n  \"tarjetaPrueba\": \"0000000000000001\"\n}"
         },
         "url": "{{api_gateway_url}}/api/v1/pedidos"
       }

@@ -93,16 +93,16 @@ real hasta configurarlo y comprobar recepcion. El comprobante no es una boleta f
    token y 200 con access token. En Entra mostrar usuarios, roles y registro SPA.
 3. **1:45-3:00, recomendaciones y compra.** Entrar con Microsoft, abrir Productos,
    agregar un notebook al carrito y esperar unos segundos. Mostrar **Para ti**
-   debajo del catalogo y confirmar el pedido con **Tarjeta aprobada** en Carrito.
+   debajo del catalogo y pagar con `0000 0000 0000 0001` en Carrito.
    Hacer esto ANTES del fraude.
 4. **3:00-4:15, Kafka UI.** Abrir Topics: `payment-attempts` y `product-views`.
    Mostrar tres particiones, RF=3, ISR, mensajes, key, offset y los grupos de consumidores.
    Decir: "Kafka conserva eventos. analytics los procesa y calcula recomendaciones;
    Kafka no recomienda productos por si solo".
-5. **4:15-5:30, fraude.** Agregar otro producto y elegir **Tarjeta rechazada** en
-   Carrito. Enviar tres pagos en menos de 10 segundos: 402, 402 y 429.
-   Consultar el estado, intentar con tarjeta aprobada y comprobar que
-   no se crea una orden. El bloqueo dura 30 minutos; cambiar de pestana o recargar no lo borra.
+5. **4:15-5:30, fraude.** Agregar otro producto e introducir `0000 0000 0000 0002`
+   en Carrito. Enviar cuatro pagos en menos de 10 segundos: 402, 402, 402 y 429.
+   Comprobar que no se crea una orden. El bloqueo de 30 minutos corresponde
+   a esa tarjeta ficticia, no a la cuenta; recargar no lo borra.
 6. **5:30-6:30, RabbitMQ.** Overview muestra dos nodos. Queues muestra orders,
    notifications, stock y audit con sus DLQ. Exchanges muestra orders.exchange (topic),
    notifications.exchange (direct) y dlx.exchange (direct). Mostrar actividad tras la compra.
@@ -129,8 +129,8 @@ para los casos que requieren historial. Tambien existen `payment-attempts-dlt` y
 
 El bloqueo se decide sincronicamente en ms-pagos con PostgreSQL y bloqueo de fila.
 Es una ventana movil de 10 segundos evaluada en cada intento, NO una tarea que corre
-cada 10 segundos. La identidad sale del JWT; cambiar clienteId en el body no evita
-el bloqueo. Kafka recibe el evento para su procesamiento asincrono por analytics.
+cada 10 segundos. Se cuenta por huella HMAC de la tarjeta de prueba; cambiar de
+usuario no evita el bloqueo de ese numero. Kafka recibe el evento sin el numero.
 
 ## Postman
 
@@ -140,9 +140,10 @@ Seleccionar entorno **Pedidos360 EP6 AWS**. Copiar el access token de Mi cuenta 
 
 - Coleccion general: GET publico, GET sin token, GET protegido, productos y pedidos.
 - Coleccion EP5: 01 detalle, 02 metricas, 03 recomendaciones.
-- Ejecutar 04 tres veces en menos de 10 segundos; luego 12 (estado) y 13 (compra bloqueada).
-- Esperar mas de 10 segundos desde una compra previa antes de empezar la prueba del fraude.
-- Un usuario ya bloqueado devolvera 429 desde el primer intento. No borrar la BD para ocultarlo.
+- Ejecutar 04 cuatro veces en menos de 10 segundos con la misma tarjeta; luego 12
+  (estado de la tarjeta) y 13 (compra bloqueada).
+- Una tarjeta ya bloqueada devolvera 429 desde el primer intento. No borrar la BD;
+  usa otra terminacion par para un nuevo ensayo.
 
 ## Comprobacion tecnica repetible
 

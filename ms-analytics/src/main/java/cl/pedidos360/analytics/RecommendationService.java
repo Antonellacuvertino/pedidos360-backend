@@ -3,6 +3,7 @@ package cl.pedidos360.analytics;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +34,11 @@ public class RecommendationService {
         this.catalog = builder.baseUrl(catalogUrl).requestFactory(factory).build();
     }
 
-    public Result forUser(String userId, String token) {
-        var selected = views.findFirstByUsuarioIdAndAccionOrderByFechaDesc(userId, "CARRITO");
-        if (selected == null) return new Result(null, List.of(), null);
+    public Result forUser(String userId, String token, boolean soloCarrito) {
+        var selected = soloCarrito
+                ? views.findFirstByUsuarioIdAndAccionOrderByFechaDesc(userId, "CARRITO")
+                : views.findFirstByUsuarioIdAndAccionInOrderByFechaDesc(userId, List.of("VISTA", "CARRITO"));
+        if (selected == null) return new Result(null, List.of(), null, null);
         try {
             Product[] products = catalog.get().uri("/productos")
                     .headers(headers -> headers.setBearerAuth(token))
@@ -47,16 +50,18 @@ public class RecommendationService {
     }
 
     static Result suggest(ProductViewRecord selected, List<Product> products) {
-        var categories = COMPLEMENTS.getOrDefault(selected.getCategoria(), List.of());
+        var categories = new ArrayList<String>();
+        if ("VISTA".equals(selected.getAccion())) categories.add(selected.getCategoria());
+        categories.addAll(COMPLEMENTS.getOrDefault(selected.getCategoria(), List.of()));
         var ids = products.stream()
                 .filter(p -> p.stock() > 0 && !selected.getProductoId().equals(p.id()))
                 .filter(p -> categories.contains(p.categoria()))
                 .sorted(Comparator.comparingInt((Product p) -> categories.indexOf(p.categoria()))
                         .thenComparing(Product::precio).thenComparing(Product::id))
                 .map(Product::id).toList();
-        return new Result(selected.getCategoria(), ids, selected.getProductoId());
+        return new Result(selected.getCategoria(), ids, selected.getProductoId(), selected.getAccion());
     }
 
     record Product(Long id, String categoria, BigDecimal precio, int stock) { }
-    public record Result(String categoria, List<Long> productoIds, Long productoBaseId) { }
+    public record Result(String categoria, List<Long> productoIds, Long productoBaseId, String accionBase) { }
 }

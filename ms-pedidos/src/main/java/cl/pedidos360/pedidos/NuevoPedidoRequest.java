@@ -12,5 +12,10 @@ public record NuevoPedidoRequest(
         @Positive int cantidad,
         @NotNull @Positive BigDecimal total,
         EstadoPedido estado,
-        @Email String email) {
+        @Email String email,
+        String tarjetaPrueba) {
+    public NuevoPedidoRequest(Long clienteId, Long productoId, int cantidad, BigDecimal total,
+            EstadoPedido estado, String email) {
+        this(clienteId, productoId, cantidad, total, estado, email, null);
+    }
 }

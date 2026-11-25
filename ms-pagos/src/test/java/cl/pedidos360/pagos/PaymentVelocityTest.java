@@ -15,16 +15,17 @@ class PaymentVelocityTest {
         assertTrue(velocity.registerAttempt(start));
         assertTrue(velocity.registerAttempt(start.plusSeconds(9)));
         assertTrue(velocity.registerAttempt(start.plusSeconds(10)));
-        assertFalse(velocity.registerAttempt(start.plusSeconds(11)));
+        assertTrue(velocity.registerAttempt(start.plusSeconds(11)));
+        assertFalse(velocity.registerAttempt(start.plusSeconds(12)));
     }
     @Test
-    void blocksThirdAttemptAndResetsAfterThirtyMinutes() {
+    void blocksFourthAttemptAndResetsAfterThirtyMinutes() {
         PaymentVelocity velocity = new PaymentVelocity("fingerprint");
         Instant start = Instant.parse("2026-11-16T10:00:00Z");
 
         assertTrue(velocity.registerAttempt(start));
         assertTrue(velocity.registerAttempt(start.plusSeconds(1)));
-        assertFalse(velocity.registerAttempt(start.plusSeconds(2)));
+        assertTrue(velocity.registerAttempt(start.plusSeconds(2)));
         assertFalse(velocity.registerAttempt(start.plusSeconds(3)));
         assertFalse(velocity.registerAttempt(start.plusSeconds(20)));
         assertTrue(velocity.registerAttempt(start.plusSeconds(1804)));
@@ -37,6 +38,7 @@ class PaymentVelocityTest {
         assertTrue(velocity.registerAttempt(start));
         assertTrue(velocity.registerAttempt(start.plusSeconds(10)));
         assertTrue(velocity.registerAttempt(start.plusSeconds(11)));
-        assertFalse(velocity.registerAttempt(start.plusSeconds(12)));
+        assertTrue(velocity.registerAttempt(start.plusSeconds(12)));
+        assertFalse(velocity.registerAttempt(start.plusSeconds(13)));
     }
 }

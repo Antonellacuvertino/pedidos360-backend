@@ -6,6 +6,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -26,26 +27,30 @@ public class PaymentController {
     @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public ResponseEntity<PagoResponse> simular(@Valid @RequestBody PagoRequest request, @AuthenticationPrincipal Jwt jwt) {
         PagoResponse response = service.simular(request, usuario(jwt));
-        return ResponseEntity.status("BLOQUEADO".equals(response.estado())
-                ? HttpStatus.TOO_MANY_REQUESTS : HttpStatus.OK).body(response);
+        return ResponseEntity.status(switch (response.estado()) {
+            case "BLOQUEADO" -> HttpStatus.TOO_MANY_REQUESTS;
+            case "RECHAZADO_SIMULADO" -> HttpStatus.PAYMENT_REQUIRED;
+            default -> HttpStatus.OK;
+        }).body(response);
     }
 
     @GetMapping("/estado")
     @PreAuthorize("hasAnyAuthority('SCOPE_pedidos.read','SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
-    public PaymentService.FraudStatus estado(@AuthenticationPrincipal Jwt jwt) {
-        return service.estado(usuario(jwt));
+    public PaymentService.FraudStatus estado(@RequestParam(defaultValue = "2") String tarjeta) {
+        return service.estado("0".repeat(15) + tarjeta);
     }
 
     @PostMapping("/autorizar-compra")
     @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
-    public PaymentService.FraudStatus autorizar(@Valid @RequestBody Compra request, @AuthenticationPrincipal Jwt jwt) {
+    public Autorizacion autorizar(@Valid @RequestBody Compra request, @AuthenticationPrincipal Jwt jwt) {
         PagoResponse response = service.simular(new PagoRequest(usuario(jwt), java.util.UUID.randomUUID().toString(),
-                request.monto(), "demo_checkout"), usuario(jwt), request.rechazoSimulado());
-        return new PaymentService.FraudStatus("BLOQUEADO".equals(response.estado()), null);
+                request.monto(), request.tarjetaPrueba()), usuario(jwt));
+        return new Autorizacion("BLOQUEADO".equals(response.estado()), response.estado());
     }
 
     public record Compra(@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive
-            java.math.BigDecimal monto, boolean rechazoSimulado) { }
+            java.math.BigDecimal monto, @jakarta.validation.constraints.NotBlank String tarjetaPrueba) { }
+    public record Autorizacion(boolean bloqueado, String estado) { }
 
     private String usuario(Jwt jwt) {
         return jwt.getIssuer() + ":" + (jwt.getClaimAsString("oid") != null

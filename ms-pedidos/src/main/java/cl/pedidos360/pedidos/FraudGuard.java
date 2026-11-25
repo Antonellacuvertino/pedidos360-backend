@@ -23,17 +23,15 @@ public class FraudGuard {
 
     FraudGuard(RestClient client) { this.client = client; }
 
-    public void verificar(String accessToken, java.math.BigDecimal monto) {
-        verificar(accessToken, monto, false);
-    }
-
-    public void verificar(String accessToken, java.math.BigDecimal monto, boolean rechazoSimulado) {
+    public void verificar(String accessToken, java.math.BigDecimal monto, String tarjetaPrueba) {
+        if (tarjetaPrueba == null || !tarjetaPrueba.matches("0{15}[1-9]")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usa una tarjeta ficticia de Pedidos360");
+        }
         Status status;
         try {
             status = client.post().uri("/pagos/autorizar-compra")
                     .headers(headers -> headers.setBearerAuth(accessToken))
-                    .body(rechazoSimulado ? java.util.Map.of("monto", monto, "rechazoSimulado", true)
-                            : java.util.Map.of("monto", monto))
+                    .body(java.util.Map.of("monto", monto, "tarjetaPrueba", tarjetaPrueba))
                     .retrieve().body(Status.class);
         } catch (RestClientException exception) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
@@ -44,9 +42,15 @@ public class FraudGuard {
         }
         if (status.bloqueado()) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
-                    "Compra bloqueada temporalmente por intentos de pago reiterados");
+                    "Tarjeta de prueba bloqueada por intentos de pago reiterados");
+        }
+        if ("RECHAZADO_SIMULADO".equals(status.estado())) {
+            throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Pago de prueba rechazado");
+        }
+        if (!"APROBADO_SIMULADO".equals(status.estado())) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Estado de pago no disponible");
         }
     }
 
-    public record Status(Boolean bloqueado) { }
+    public record Status(Boolean bloqueado, String estado) { }
 }

@@ -42,7 +42,7 @@ public class PaymentVelocity {
         recentAttempts.add(now);
         attempts = recentAttempts.size();
         windowStartedAt = recentAttempts.get(0);
-        if (attempts >= 3) {
+        if (attempts > 3) {
             blockedUntil = now.plusSeconds(1800);
             return false;
         }

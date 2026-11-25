@@ -37,4 +37,5 @@ public class ProductViewRecord {
     public Long getProductoId() { return productoId; }
     public String getCategoria() { return categoria; }
     public Instant getFecha() { return fecha; }
+    public String getAccion() { return accion; }
 }

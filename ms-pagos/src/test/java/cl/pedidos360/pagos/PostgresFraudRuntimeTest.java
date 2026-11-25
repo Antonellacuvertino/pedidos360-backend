@@ -30,18 +30,19 @@ class PostgresFraudRuntimeTest {
     @Test
     void concurrentFirstAttemptsCommitExactlyOneBlock() throws Exception {
         String user = "validation-" + UUID.randomUUID();
-        PagoRequest request = new PagoRequest("ignored", "test", BigDecimal.TEN, "demo_test");
-        ExecutorService executor = Executors.newFixedThreadPool(3);
+        PagoRequest request = new PagoRequest("ignored", "test", BigDecimal.TEN, "0000000000000006");
+        ExecutorService executor = Executors.newFixedThreadPool(4);
         CountDownLatch start = new CountDownLatch(1);
         try {
             Callable<String> attempt = () -> { start.await(); return service.simular(request, user).estado(); };
-            List<Future<String>> results = List.of(executor.submit(attempt), executor.submit(attempt), executor.submit(attempt));
+            List<Future<String>> results = List.of(executor.submit(attempt), executor.submit(attempt), executor.submit(attempt), executor.submit(attempt));
             start.countDown();
             List<String> states = List.of(results.get(0).get(20, TimeUnit.SECONDS),
-                    results.get(1).get(20, TimeUnit.SECONDS), results.get(2).get(20, TimeUnit.SECONDS));
-            assertThat(states).containsExactlyInAnyOrder("APROBADO_SIMULADO", "APROBADO_SIMULADO", "BLOQUEADO");
-            assertThat(service.estado(user).bloqueado()).isTrue();
-            assertThat(service.simular(new PagoRequest("changed", "test2", BigDecimal.ONE, "demo_changed"), user).estado())
+                    results.get(1).get(20, TimeUnit.SECONDS), results.get(2).get(20, TimeUnit.SECONDS),
+                    results.get(3).get(20, TimeUnit.SECONDS));
+            assertThat(states).containsExactlyInAnyOrder("RECHAZADO_SIMULADO", "RECHAZADO_SIMULADO", "RECHAZADO_SIMULADO", "BLOQUEADO");
+            assertThat(service.estado(request.tarjetaPrueba()).bloqueado()).isTrue();
+            assertThat(service.simular(request, "another-user").estado())
                     .isEqualTo("BLOQUEADO");
         } finally {
             executor.shutdownNow();

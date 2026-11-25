@@ -36,7 +36,7 @@
       }
     },
     {
-      "name": "04 POST pago simulado - tercer intento en 10 segundos bloquea usuario",
+      "name": "04 POST pago simulado - cuarto intento en 10 segundos bloquea tarjeta",
       "request": {
         "method": "POST",
         "header": [
@@ -45,7 +45,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"clienteId\": \"demo-cliente\",\n  \"pedidoId\": \"demo-pedido\",\n  \"monto\": 1000,\n  \"metodoPagoToken\": \"demo_tarjeta01\"\n}"
+          "raw": "{\n  \"clienteId\": \"demo-cliente\",\n  \"pedidoId\": \"demo-pedido\",\n  \"monto\": 1000,\n  \"tarjetaPrueba\": \"0000000000000002\"\n}"
         },
         "url": "{{api_gateway_url}}/api/v1/pagos/simular"
       }
@@ -125,25 +125,25 @@
       }
     },
     {
-      "name": "12 GET estado tras tres intentos - bloqueado true",
+      "name": "12 GET estado de la tarjeta ficticia 2 - bloqueado true",
       "request": {
         "method": "GET",
         "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-        "url": "{{api_gateway_url}}/api/v1/pagos/estado"
+        "url": "{{api_gateway_url}}/api/v1/pagos/estado?tarjeta=2"
       },
       "event": [{ "listen": "test", "script": { "exec": [
         "pm.test('Bloqueo persistido', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().bloqueado).to.eql(true); });"
       ] } }]
     },
     {
-      "name": "13 POST compra con usuario bloqueado - 429 y sin orden nueva",
+      "name": "13 POST compra con tarjeta bloqueada - 429 y sin orden nueva",
       "request": {
         "method": "POST",
         "header": [
           { "key": "Authorization", "value": "Bearer {{access_token}}" },
           { "key": "Content-Type", "value": "application/json" }
         ],
-        "body": { "mode": "raw", "raw": "{\"items\":[{\"clienteId\":1,\"productoId\":{{producto_id}},\"cantidad\":1,\"total\":1000}]}" },
+        "body": { "mode": "raw", "raw": "{\"tarjetaPrueba\":\"0000000000000002\",\"items\":[{\"clienteId\":1,\"productoId\":{{producto_id}},\"cantidad\":1,\"total\":1000}]}" },
         "url": "{{api_gateway_url}}/api/v1/pedidos/lote"
       },
       "event": [{ "listen": "test", "script": { "exec": [

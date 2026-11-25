@@ -13,18 +13,17 @@ El [guion de ocho minutos](DEMO_EP6_AWS.md) lista las consolas, direcciones y pa
 2. Con el carrito vacio, agrega el Notebook Lenovo. Debajo del catalogo
    busca **Para ti**. Un mouse o monitor disponible complementa al notebook;
    no se repite el notebook ni se ofrecen articulos que ya estan en el carrito.
-3. En **Carrito > Pago de prueba**, usa **Tarjeta aprobada** y presiona
+3. En **Carrito > Pago de prueba**, escribe `0000 0000 0000 0001` y presiona
    **Pagar pedido**. Solo entonces se crea la solicitud y aparece el comprobante.
    En el dashboard, verifica que luego aparezca el pedido. El comprobante no
    es una boleta fiscal y el pago es simulado; no digas que integra Webpay.
    En **Analitica > Para ti**, revisa los complementos por nombre, imagen y precio.
-4. Prueba el fraude al final con una cuenta de demo sin bloqueo y al menos
-   10 segundos despues de la ultima compra. Agrega un producto nuevo al carrito
-   y elige **Tarjeta rechazada**. Pulsa **Pagar pedido** y reintenta cuando
-   termine cada solicitud: en menos de 10 segundos deben verse 402, 402 y 429.
-   No se vacia el carrito ni se emite un comprobante. Cambiar a **Tarjeta aprobada**
-   no evita el bloqueo. No uses tu cuenta principal para
-   probar antes de presentar: el bloqueo dura 30 minutos.
+4. Prueba el fraude al final con `0000 0000 0000 0002`. Agrega un producto al
+   carrito, escribe el numero y pulsa **Pagar pedido** cuatro veces dentro de
+   diez segundos, esperando cada respuesta: 402, 402, 402 y 429.
+   No se vacia el carrito ni se emite un comprobante. El bloqueo dura 30 minutos
+   para ese numero en todas las cuentas. Para ensayar y luego presentar puedes
+   usar terminaciones pares distintas (2, 4, 6 u 8); no uses tarjetas reales.
 5. Anota el resultado de cada paso. Si algo falla, registra la ruta, hora
    y codigo HTTP en Red/Network, sin capturar Authorization ni el JWT.
 

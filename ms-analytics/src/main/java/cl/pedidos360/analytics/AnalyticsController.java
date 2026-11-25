@@ -5,6 +5,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,9 +23,10 @@ public class AnalyticsController {
 
     @GetMapping("/recomendaciones")
     @PreAuthorize("hasAuthority('SCOPE_pedidos.read') or hasRole('Pedidos.Admin')")
-    public RecommendationService.Result recomendaciones(@AuthenticationPrincipal Jwt jwt) {
+    public RecommendationService.Result recomendaciones(@AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "false") boolean soloCarrito) {
         String userId = jwt.getClaimAsString("oid") != null ? jwt.getClaimAsString("oid") : jwt.getSubject();
-        return recommendations.forUser(userId, jwt.getTokenValue());
+        return recommendations.forUser(userId, jwt.getTokenValue(), soloCarrito);
     }
 
     @GetMapping("/resumen")
