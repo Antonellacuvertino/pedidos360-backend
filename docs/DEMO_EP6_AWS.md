@@ -92,8 +92,8 @@ real hasta configurarlo y comprobar recepcion. El comprobante no es una boleta f
    issuer y audience. VPC links debe indicar AVAILABLE. En Postman contrastar 401 sin
    token y 200 con access token. En Entra mostrar usuarios, roles y registro SPA.
 3. **1:45-3:00, recomendaciones y compra.** Entrar con Microsoft, abrir Productos,
-   ver detalle de un articulo y esperar unos segundos. Mostrar recomendaciones,
-   agregar un articulo al carrito y confirmar el comprobante. Hacer esto ANTES del fraude.
+   agregar un notebook al carrito y esperar unos segundos. Mostrar **Para ti**
+   debajo del catalogo y confirmar el pedido. Hacer esto ANTES del fraude.
 4. **3:00-4:15, Kafka UI.** Abrir Topics: `payment-attempts` y `product-views`.
    Mostrar tres particiones, RF=3, ISR, mensajes, key, offset y los grupos de consumidores.
    Decir: "Kafka conserva eventos. analytics los procesa y calcula recomendaciones;

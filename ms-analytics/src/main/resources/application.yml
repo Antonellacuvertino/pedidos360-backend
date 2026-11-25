@@ -38,5 +38,6 @@ management:
       exposure:
         include: health,info
 pedidos360:
+  productos-url: ${PRODUCTOS_URL:http://localhost:8081}
   security:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}

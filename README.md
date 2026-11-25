@@ -6,6 +6,7 @@ tres ZooKeeper y tres brokers. Se verificaron dos topicos de negocio con
 tres particiones, tres replicas y sus ISR completos. La usuaria confirmo
 login Microsoft, catalogo y vista Streaming desde la URL publica.
 Ver [despliegue necesario](docs/DESPLIEGUE_MINIMO_EP5_EP6.md) para la distribucion.
+Para preparar la presentacion, usar el [ensayo y mapa de codigo](docs/ENSAYO_PRESENTACION_EP6.md).
 
 Ensayo sin AWS: [recorrido local](docs/RECORRIDO_LOCAL.md), con login Microsoft,
 PostgreSQL y mensajeria reales, pagos simulados y correo desactivado.

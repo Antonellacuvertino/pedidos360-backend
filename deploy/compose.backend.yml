@@ -80,6 +80,9 @@ services:
     <<: *app
     command: ["java", "-jar", "/app/ms-analytics.jar"]
     ports: ["8089:8089"]
+    environment:
+      <<: *environment
+      PRODUCTOS_URL: ${PRODUCTOS_URL:?Define PRODUCTOS_URL}
 
   kafka-admin-service:
     <<: *app

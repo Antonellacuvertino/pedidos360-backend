@@ -18,6 +18,7 @@ public class ProductViewRecord {
     private Long productoId;
     private String categoria;
     private Instant fecha;
+    private String accion;
 
     protected ProductViewRecord() {
     }
@@ -28,6 +29,7 @@ public class ProductViewRecord {
         productoId = event.productoId();
         categoria = event.categoria();
         fecha = event.fecha();
+        accion = event.accion();
     }
 
     public UUID getId() { return id; }

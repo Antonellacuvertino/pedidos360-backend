@@ -89,8 +89,7 @@ class KafkaRuntimeTest {
             assertThat(views.existsById(view.eventId())).isTrue();
             assertThat(payments.existsById(payment.eventId())).isTrue();
         });
-        var jwt = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("test")
-                .header("alg", "none").claim("oid", user).build();
-        assertThat(new AnalyticsController(views, payments).recomendaciones(jwt).productoIds()).contains(123L);
+        var selected = views.findFirstByUsuarioIdAndAccionOrderByFechaDesc(user, "CARRITO");
+        assertThat(selected.getProductoId()).isEqualTo(123L);
     }
 }

@@ -8,7 +8,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.data.domain.PageRequest;
 
 import cl.pedidos360.streaming.ProductViewEvent;
 
@@ -18,20 +17,18 @@ class ProductViewRepositoryTest {
     private ProductViewRepository repository;
 
     @Test
-    void findsLastCategoryAndPopularProducts() {
-        repository.save(new ProductViewRecord(event("user-1", 1L, "Redes", 1)));
-        repository.save(new ProductViewRecord(event("user-2", 2L, "Redes", 2)));
-        repository.save(new ProductViewRecord(event("user-3", 2L, "Redes", 3)));
+    void ignoresLaterViewsAndOtherUsersWhenSelectingCartContext() {
+        repository.save(new ProductViewRecord(event("user-1", 1L, 1, "CARRITO")));
+        repository.save(new ProductViewRecord(event("user-1", 2L, 2, "CARRITO")));
+        repository.save(new ProductViewRecord(event("user-1", 3L, 3, "VISTA")));
+        repository.save(new ProductViewRecord(event("user-2", 4L, 4, "CARRITO")));
 
-        assertThat(repository.findFirstByUsuarioIdOrderByFechaDesc("user-1").getCategoria())
-                .isEqualTo("Redes");
-        assertThat(repository.popularInCategory("Redes", PageRequest.of(0, 5)))
-                .startsWith(2L);
-        assertThat(repository.viewedBy("user-1")).containsExactly(1L);
+        assertThat(repository.findFirstByUsuarioIdAndAccionOrderByFechaDesc("user-1", "CARRITO")
+                .getProductoId()).isEqualTo(2L);
     }
 
-    private ProductViewEvent event(String user, Long product, String category, int second) {
-        return new ProductViewEvent(UUID.randomUUID(), user, product, category,
-                Instant.parse("2026-11-16T10:00:00Z").plusSeconds(second));
+    private ProductViewEvent event(String user, Long product, int second, String action) {
+        return new ProductViewEvent(UUID.randomUUID(), user, product, "Redes",
+                Instant.parse("2026-11-16T10:00:00Z").plusSeconds(second), action);
     }
 }
