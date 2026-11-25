@@ -30,3 +30,6 @@ mvn -DskipTests package
 ```
 
 Para el ensayo se usa la URL de AWS. Los archivos `.env`, contraseñas y tokens se mantienen fuera de Git.
+La [plantilla](.env.example) incluye los enlaces y la configuración pública.
+En el equipo del despliegue, `deploy/preparar-env-ep6.ps1` puede generar el
+`.env` privado con las claves vigentes del laboratorio.

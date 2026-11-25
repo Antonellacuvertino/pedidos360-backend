@@ -9,13 +9,21 @@
 
 ### Entrar a Kafka UI
 
-Usuario: **`pedidos360`**. En PowerShell, desde la carpeta padre de `backend-pedidos360`:
+Usuario: **`pedidos360`**. Abre `backend-pedidos360/.env`: `KAFKA_UI_URL`
+tiene el enlace y `KAFKA_UI_PASSWORD`, la contraseña vigente. Para RabbitMQ
+usa `RABBITMQ_UI_URL`, `RABBITMQ_USER` y `RABBITMQ_PASSWORD`. Las claves son
+distintas. No abras este archivo durante la presentación.
+
+Si el archivo privado aún no existe, genéralo en el equipo donde se hizo el
+despliegue. Desde la carpeta padre de `backend-pedidos360`:
 
 ```powershell
-.\backend-pedidos360\deploy\copiar-clave-panel-ep6.ps1 -Panel Kafka
+powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File .\backend-pedidos360\deploy\preparar-env-ep6.ps1
 ```
 
-Pega lo que quedó en el portapapeles en la ventana de autenticación de Kafka UI. Para RabbitMQ usa el mismo script con `-Panel Rabbit`; la clave es distinta. Ninguna se muestra en la terminal. Cierra la terminal o limpia el portapapeles con `Set-Clipboard -Value ''` antes de presentar.
+El script lee las claves del estado privado del laboratorio sin mostrarlas ni
+copiarlas al portapapeles. No cambia credenciales en AWS ni sobrescribe un
+`.env` existente. Git excluye tanto el estado privado como el `.env`.
 
 ### Dejar Postman listo
 
