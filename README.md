@@ -1,9 +1,11 @@
 # Backend Pedidos360
 
-Actualizacion EP6 (24-11-2026): [despliegue necesario](docs/DESPLIEGUE_MINIMO_EP5_EP6.md)
-y [prompt para Claude](docs/PROMPT_CLAUDE_AWS_EP5.md). Compose Kafka ahora define
-tres ZooKeeper y tres brokers. El arranque de esta nueva topologia en cloud
-esta pendiente; las pruebas anteriores usaron un solo ZooKeeper.
+Actualizacion EP6 (25-11-2026): [estado del despliegue y guia de demostracion](docs/DEMO_EP6_AWS.md).
+Las cinco EC2 estan activas, los diez servicios responden UP y Kafka ejecuta
+tres ZooKeeper y tres brokers. Se verificaron dos topicos de negocio con
+tres particiones, tres replicas y sus ISR completos. La usuaria confirmo
+login Microsoft, catalogo y vista Streaming desde la URL publica.
+Ver [despliegue necesario](docs/DESPLIEGUE_MINIMO_EP5_EP6.md) para la distribucion.
 
 Ensayo sin AWS: [recorrido local](docs/RECORRIDO_LOCAL.md), con login Microsoft,
 PostgreSQL y mensajeria reales, pagos simulados y correo desactivado.
@@ -14,7 +16,7 @@ No desplegar ms-pedidos actualizado sin ms-pagos disponible y PAGOS_URL configur
 
 Backend multi-modulo construido con Java 21 y Spring Boot. Incluye seguridad JWT con Microsoft Entra ID, RabbitMQ, PostgreSQL y los modulos Kafka de EP5.
 
-**Estado EP5 (23-11-2026):** compilan backend y frontend. Se verificaron tres brokers, dos topicos de negocio con tres particiones/tres replicas, consumo real por ms-analytics, recomendaciones y recuperacion mediante DLT. PostgreSQL real paso la prueba de tres intentos concurrentes y bloqueo persistido. **Falta validar el flujo completo con JWT real en el nuevo laboratorio AWS.** El frontend mantiene `kafkaEnabled: false` hasta completar el despliegue. Ver [VALIDACION_Y_LAB_NUEVO.md](docs/VALIDACION_Y_LAB_NUEVO.md) para evidencias y pasos.
+**Pruebas previas (23-11-2026):** compilaron backend y frontend; se verificaron consumo Kafka, recomendaciones, DLT y bloqueo concurrente con PostgreSQL. No confundir esas pruebas con el recorrido cloud: la evidencia actual y lo pendiente estan en [DEMO_EP6_AWS.md](docs/DEMO_EP6_AWS.md). El frontend desplegado ahora usa `kafkaEnabled: true`.
 
 El despliegue con una EC2 por microservicio, rutas explicitas del API Gateway
 y acceso a RabbitMQ esta documentado en
@@ -22,7 +24,23 @@ y acceso a RabbitMQ esta documentado en
 La configuracion de usuarios invitados, roles y correo esta en
 [docs/ROLES_Y_CORREO.md](docs/ROLES_Y_CORREO.md).
 
-## Despliegue cloud actual
+## Despliegue cloud actual (EP6)
+
+Cuenta `767398066771`, region `us-east-1`. Todo el recorrido de demostracion usa AWS, no localhost.
+
+| Componente | URL |
+| --- | --- |
+| Angular en EC2 | https://100-52-32-209.sslip.io |
+| API Gateway | https://l9xrwlo874.execute-api.us-east-1.amazonaws.com |
+| RabbitMQ Management | https://rabbit.100-52-32-209.sslip.io |
+| Kafka UI | https://kafka.100-52-32-209.sslip.io |
+
+Angular consume exclusivamente el Gateway. Las rutas explicitas pasan por JWT Authorizer,
+VPC Link y ALB interno hacia cada microservicio. Los paneles tienen autenticacion y HTTPS;
+los puertos de bases y brokers no estan abiertos a Internet. No hay una ruta publica ANY de respaldo.
+Kafka UI usa autenticacion del proxy; RabbitMQ usa su propio usuario. Las claves no estan en Git.
+
+## Referencia historica (EP3/EP4, no usar para EP6)
 
 Recursos de la etapa anterior en `us-east-1` (verificar estado actual en AWS antes de presentar):
 
@@ -65,7 +83,7 @@ La primera llamada responde `200`; la segunda responde `401` si no se envia un J
 
 Para la demostracion en Postman, importar los dos archivos de `postman/`. Copiar el access token desde **Mi cuenta** a la variable secreta `access_token` del entorno local. Configurar `correo_destino` con un buzon propio y ejecutar 05b para crear el cliente antes de 07; tambien se usa en 11. Seleccionar ese cliente en el carrito si se compra desde Angular. Comprobar los IDs y el precio actual con los GET antes de enviar un pedido. No exportar el entorno despues de pegar el token. Una respuesta `202` de notificaciones confirma publicacion en RabbitMQ, no la entrega del correo.
 
-## Arquitectura
+## Arquitectura anterior (EP3/EP4)
 
 ```text
 Angular + MSAL
@@ -127,9 +145,9 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 
 ## Flujo de una compra
 
-1. Angular envia `POST /api/v1/pedidos` con JWT.
+1. Angular envia `POST /api/v1/pedidos/lote` con JWT para confirmar el carrito.
 2. API Gateway valida el JWT y el scope `pedidos.write`; `ms-pedidos` valida otra vez firma, issuer, audience y vigencia.
-3. `ms-pedidos` publica `order.created` y responde `202 Accepted`.
+3. `ms-pedidos` consulta `ms-pagos` antes de publicar. Tres intentos en una ventana movil de 10 segundos bloquean al usuario por 30 minutos: responde 429 sin publicar la compra. Si pasa el control, publica `order.created` y responde `202 Accepted`.
 4. `orders.queue` guarda la orden.
 5. `stock.queue` descuenta inventario.
 6. `notifications.queue` envia o simula el correo.
@@ -249,6 +267,6 @@ mvn clean package
 
 Las pruebas de repositorio usan H2 y no requieren RabbitMQ. El `docker-compose.yml` fue validado con `docker compose config --quiet`.
 
-## Estado del laboratorio
+## Estado historico del laboratorio anterior
 
 El 14 de octubre de 2026 se comprobo el cluster RabbitMQ de dos nodos y las ocho colas, y la salud de los siete servicios en EC2 separadas. La usuaria tambien confirmo login, catalogo y comprobante en la web. Queda pendiente repetir con un JWT real las rutas explicitas del API Gateway, asignar el rol de aplicacion en Entra y activar/probar SMTP real. Ver `deploy/ARQUITECTURA_MULTI_EC2.md` y `docs/GUIA_PRESENTACION_EP3_EP4.md`.

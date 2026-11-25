@@ -7,6 +7,7 @@ import argparse
 import base64
 import json
 import secrets
+from datetime import datetime, timezone
 from pathlib import Path
 
 import boto3
@@ -238,6 +239,39 @@ def command_status(session, state):
         print(result.get("StandardErrorContent", "")[-2000:], flush=True)
 
 
+def verify(session, state):
+    """Read-only health and topology evidence; never prints container environments."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    checks = {
+        "core": "for port in 8081 8082 8083 8084 8086; do echo PORT=$port; curl -fsS --max-time 10 http://localhost:$port/actuator/health; echo; done",
+        "support": "for port in 8080 8085 8087 8089 8090; do echo PORT=$port; curl -fsS --max-time 10 http://localhost:$port/actuator/health; echo; done",
+        "infra": """docker exec pedidos360-base-rabbitmq-1-1 rabbitmqctl cluster_status
+docker exec pedidos360-base-rabbitmq-1-1 rabbitmqctl list_queues name messages consumers arguments
+docker exec pedidos360-base-rabbitmq-1-1 rabbitmqctl list_exchanges name type
+docker exec pedidos360-base-postgres-1 pg_isready -U pedidos360 -d pedidos360""",
+        "streaming": """docker ps --format '{{.Names}}: {{.Status}}'
+docker exec pedidos360-ep6-kafka-1-1 kafka-topics --bootstrap-server kafka-1:29092 --describe --topic 'payment-attempts|product-views'
+docker exec pedidos360-ep6-kafka-1-1 kafka-consumer-groups --bootstrap-server kafka-1:29092 --all-groups --describe""",
+    }
+    labels = []
+    for role, command in checks.items():
+        label = f"verify-{role}-{stamp}"
+        send(session, state, role, label, "#!/bin/bash\nset -eu\n" + command)
+        labels.append(label)
+    state["last_verification"] = labels
+    save(state)
+    elb = session.client("elbv2")
+    for name, arn in state.get("target_groups", {}).items():
+        health = elb.describe_target_health(TargetGroupArn=arn)["TargetHealthDescriptions"]
+        print("Target", name, [entry["TargetHealth"]["State"] for entry in health], flush=True)
+
+
+def verification_results(session, state):
+    commands = state.get("commands", {})
+    command_status(session, {"commands": {label: commands[label]
+                   for label in state.get("last_verification", [])}})
+
+
 def frontend(session, state):
     if not state.get("api_url") or not state.get("domain"):
         raise RuntimeError("Configurar primero el dominio y el Gateway.")
@@ -403,7 +437,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--account", required=True)
     parser.add_argument("--region", default="us-east-1")
-    parser.add_argument("action", choices=["provision", "status", "configure", "commands", "gateway", "frontend"])
+    parser.add_argument("action", choices=["provision", "status", "configure", "commands", "gateway", "frontend", "verify", "verify-results"])
     args = parser.parse_args()
     session = boto3.Session(region_name=args.region)
     account = session.client("sts").get_caller_identity()["Account"]
@@ -423,6 +457,10 @@ def main():
         command_status(session, state)
     elif args.action == "frontend":
         frontend(session, state)
+    elif args.action == "verify":
+        verify(session, state)
+    elif args.action == "verify-results":
+        verification_results(session, state)
     else:
         gateway(session, state)
 
