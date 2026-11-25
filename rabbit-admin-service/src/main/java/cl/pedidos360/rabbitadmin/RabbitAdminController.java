@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 
 @RestController
-@RequestMapping("/api/rabbitmq")
+@RequestMapping({"/api/rabbitmq", "/api/v1/rabbitmq"})
 public class RabbitAdminController {
     private final RabbitManagementService service;
 

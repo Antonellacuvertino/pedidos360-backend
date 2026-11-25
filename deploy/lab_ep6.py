@@ -224,7 +224,7 @@ docker compose -p pedidos360-backend --env-file deploy/.env.node -f deploy/compo
         else:
             file = "compose.infrastructure.yml" if role == "infra" else "compose.kafka.yml"
             project = "pedidos360-base" if role == "infra" else "pedidos360-ep6"
-            script += f"docker compose -p {project} --env-file deploy/.env.node -f deploy/{file} up -d\n"
+            script += f"docker compose -p {project} --env-file deploy/.env.node -f deploy/{file} up -d > /opt/pedidos360/compose.log 2>&1 || {{ tail -n 60 /opt/pedidos360/compose.log; exit 1; }}\n"
             script += f"docker compose -p {project} --env-file deploy/.env.node -f deploy/{file} ps\n"
         send(session, state, role, f"configure-{role}", script)
 
@@ -238,11 +238,172 @@ def command_status(session, state):
         print(result.get("StandardErrorContent", "")[-2000:], flush=True)
 
 
+def frontend(session, state):
+    if not state.get("api_url") or not state.get("domain"):
+        raise RuntimeError("Configurar primero el dominio y el Gateway.")
+    values = private_settings()
+    password = values["panel"]
+    domain = state["domain"]
+    infra = state["instances"]["infra"]["private"]
+    streaming = state["instances"]["streaming"]["private"]
+    script = f"""#!/bin/bash
+set -eu
+cloud-init status --wait
+mkdir -p /opt/pedidos360
+if [ ! -d /opt/pedidos360/frontend/.git ]; then
+  git clone https://github.com/Antonellacuvertino/pedidos360-frontend.git /opt/pedidos360/frontend
+fi
+cd /opt/pedidos360/frontend
+git pull --ff-only
+grep -F '{state['api_url']}' src/environments/environment.prod.ts >/dev/null
+grep -F 'https://{domain}' src/environments/environment.prod.ts >/dev/null
+umask 077
+hash=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext '{password}')
+printf "FRONTEND_DOMAIN=%s\\nADMIN_PASSWORD_HASH='%s'\\nRABBIT_ADMIN_URL=%s\\nKAFKA_ADMIN_URL=%s\\n" '{domain}' "$hash" '{infra}:15672' '{streaming}:8088' > .env
+docker compose up -d --build > /opt/pedidos360/frontend-build.log 2>&1 || {{ tail -n 60 /opt/pedidos360/frontend-build.log; exit 1; }}
+docker compose ps
+"""
+    send(session, state, "frontend", "configure-frontend", script)
+
+
+def gateway(session, state):
+    elb = session.client("elbv2")
+    api = session.client("apigatewayv2")
+    if not state.get("alb"):
+        result = elb.create_load_balancer(Name="p360-ep6-interno", Scheme="internal",
+            Type="application", Subnets=state["subnets"], SecurityGroups=[state["groups"]["alb"]],
+            Tags=tags("p360-ep6-interno"))
+        state["alb"] = result["LoadBalancers"][0]["LoadBalancerArn"]
+        save(state)
+    if not state.get("listener"):
+        result = elb.create_listener(LoadBalancerArn=state["alb"], Protocol="HTTP", Port=80,
+            DefaultActions=[{"Type": "fixed-response", "FixedResponseConfig": {
+                "StatusCode": "404", "ContentType": "application/json", "MessageBody": '{"error":"route_not_found"}'}}])
+        state["listener"] = result["Listeners"][0]["ListenerArn"]
+        save(state)
+    targets = [
+        ("productos", "core", 8081, ["/productos", "/productos/*", "/api/v1/productos", "/api/v1/productos/*"]),
+        ("clientes", "core", 8082, ["/clientes", "/clientes/*"]),
+        ("pedidos", "core", 8083, ["/pedidos", "/pedidos/*"]),
+        ("notifications", "core", 8084, ["/api/email/*"]),
+        ("auditoria", "core", 8086, ["/auditoria", "/auditoria/*"]),
+        ("rabbit", "support", 8085, ["/api/rabbitmq/*", "/api/v1/rabbitmq/*"]),
+        ("pagos", "support", 8087, ["/pagos/*"]),
+        ("analytics", "support", 8089, ["/analitica/*"]),
+        ("kafka", "support", 8090, ["/api/v1/kafka/*"]),
+        ("bff", "support", 8080, ["/api/v1", "/api/v1/public", "/api/v1/resumen"]),
+    ]
+    groups = state.setdefault("target_groups", {})
+    rules = state.setdefault("rules", {})
+    for priority, (name, role, port, paths) in enumerate(targets, 1):
+        if name not in groups:
+            result = elb.create_target_group(Name=f"p360-ep6-{name}", Protocol="HTTP", Port=port,
+                VpcId=state["vpc"], TargetType="instance", HealthCheckPath="/actuator/health",
+                HealthCheckIntervalSeconds=30, HealthyThresholdCount=2,
+                Matcher={"HttpCode": "200"}, Tags=tags(f"p360-ep6-{name}"))
+            groups[name] = result["TargetGroups"][0]["TargetGroupArn"]
+            save(state)
+        elb.register_targets(TargetGroupArn=groups[name], Targets=[{"Id": state["instances"][role]["id"], "Port": port}])
+        if name not in rules:
+            result = elb.create_rule(ListenerArn=state["listener"], Priority=priority,
+                Conditions=[{"Field": "path-pattern", "PathPatternConfig": {"Values": paths}}],
+                Actions=[{"Type": "forward", "TargetGroupArn": groups[name]}])
+            rules[name] = result["Rules"][0]["RuleArn"]
+            save(state)
+    if not state.get("vpc_link"):
+        result = api.create_vpc_link(Name="p360-ep6-link", SubnetIds=state["subnets"],
+                                     SecurityGroupIds=[state["groups"]["vpclink"]],
+                                     Tags={"Project": PROJECT})
+        state["vpc_link"] = result["VpcLinkId"]
+        save(state)
+    if not state.get("api"):
+        result = api.create_api(Name="Pedidos360-EP6", ProtocolType="HTTP",
+            CorsConfiguration={"AllowOrigins": ["https://" + state["domain"]],
+                "AllowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "AllowHeaders": ["authorization", "content-type"], "MaxAge": 300},
+            Tags={"Project": PROJECT})
+        state["api"] = result["ApiId"]
+        state["api_url"] = result["ApiEndpoint"]
+        save(state)
+    api_id = state["api"]
+    stages = api.get_stages(ApiId=api_id)["Items"]
+    if not any(stage["StageName"] == "$default" for stage in stages):
+        api.create_stage(ApiId=api_id, StageName="$default", AutoDeploy=True)
+    if not state.get("authorizer"):
+        result = api.create_authorizer(ApiId=api_id, AuthorizerType="JWT", Name="Microsoft-Entra",
+            IdentitySource=["$request.header.Authorization"],
+            JwtConfiguration={"Audience": ["7d7e6f82-35dc-4fd2-b580-7776c558d963"],
+                "Issuer": "https://login.microsoftonline.com/e5372bf0-c5e3-4286-887c-79069f209c1f/v2.0"})
+        state["authorizer"] = result["AuthorizerId"]
+        save(state)
+    link = api.get_vpc_link(VpcLinkId=state["vpc_link"])
+    print("VPC Link:", link["VpcLinkStatus"], state["api_url"], flush=True)
+    if link["VpcLinkStatus"] != "AVAILABLE":
+        print("Repetir gateway cuando VPC Link este AVAILABLE; no crear otro.", flush=True)
+        return
+    routes = [
+        ("GET", "/api/v1/public", "/api/v1/public", None),
+        ("GET", "/api/v1", "/api/v1", "pedidos.read"),
+        ("POST", "/api/v1", "/api/v1", "pedidos.write"),
+        ("GET", "/api/v1/resumen", "/api/v1/resumen", "pedidos.read"),
+        ("GET", "/api/v1/productos", "/productos", "pedidos.read"),
+        ("POST", "/api/v1/productos", "/productos", "pedidos.write"),
+        ("GET", "/api/v1/productos/{id}", "$request.path", "pedidos.read"),
+        ("POST", "/api/v1/productos/{id}/interacciones", "$request.path", "pedidos.write"),
+        ("GET", "/api/v1/clientes", "/clientes", "pedidos.read"),
+        ("POST", "/api/v1/clientes", "/clientes", "pedidos.write"),
+        ("GET", "/api/v1/pedidos", "/pedidos", "pedidos.read"),
+        ("POST", "/api/v1/pedidos", "/pedidos", "pedidos.write"),
+        ("POST", "/api/v1/pedidos/lote", "/pedidos/lote", "pedidos.write"),
+        ("GET", "/api/v1/auditoria", "/auditoria", "pedidos.read"),
+        ("POST", "/api/v1/notificaciones/prueba", "/api/email/enviar", "pedidos.write"),
+        ("GET", "/api/v1/pagos/estado", "/pagos/estado", "pedidos.read"),
+        ("POST", "/api/v1/pagos/simular", "/pagos/simular", "pedidos.write"),
+        ("GET", "/api/v1/analitica/resumen", "/analitica/resumen", "pedidos.read"),
+        ("GET", "/api/v1/analitica/recomendaciones", "/analitica/recomendaciones", "pedidos.read"),
+    ]
+    for method, path in [
+        ("GET", "/queues"), ("POST", "/queues"), ("DELETE", "/queues/{name}"),
+        ("POST", "/exchanges"), ("DELETE", "/exchanges/{name}"),
+        ("POST", "/bindings"), ("DELETE", "/bindings")]:
+        routes.append((method, "/api/v1/rabbitmq" + path, "$request.path",
+                       "pedidos.read" if method == "GET" else "pedidos.write"))
+    for method, path in [
+        ("GET", "/topics"), ("POST", "/topics"), ("GET", "/topics/{name}"),
+        ("PUT", "/topics/{name}"), ("DELETE", "/topics/{name}"),
+        ("GET", "/groups"), ("GET", "/groups/{id}/offsets")]:
+        routes.append((method, "/api/v1/kafka" + path, "$request.path",
+                       "pedidos.read" if method == "GET" else "pedidos.write"))
+    integrations = state.setdefault("integrations", {})
+    existing = {route["RouteKey"]: route["RouteId"] for route in api.get_routes(ApiId=api_id)["Items"]}
+    for method, path, destination, scope in routes:
+        if destination not in integrations:
+            result = api.create_integration(ApiId=api_id, IntegrationType="HTTP_PROXY",
+                IntegrationMethod="ANY", IntegrationUri=state["listener"],
+                ConnectionType="VPC_LINK", ConnectionId=state["vpc_link"],
+                PayloadFormatVersion="1.0", TimeoutInMillis=29000,
+                RequestParameters={"overwrite:path": destination})
+            integrations[destination] = result["IntegrationId"]
+            save(state)
+        key = method + " " + path
+        params = {"ApiId": api_id, "RouteKey": key,
+                  "Target": "integrations/" + integrations[destination],
+                  "AuthorizationType": "JWT" if scope else "NONE"}
+        if scope:
+            params.update(AuthorizerId=state["authorizer"], AuthorizationScopes=[scope])
+        if key in existing:
+            api.update_route(RouteId=existing[key], **params)
+        else:
+            api.create_route(**params)
+        print("Ruta:", key, flush=True)
+    print("Gateway configurado:", state["api_url"], flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--account", required=True)
     parser.add_argument("--region", default="us-east-1")
-    parser.add_argument("action", choices=["provision", "status", "configure", "commands"])
+    parser.add_argument("action", choices=["provision", "status", "configure", "commands", "gateway", "frontend"])
     args = parser.parse_args()
     session = boto3.Session(region_name=args.region)
     account = session.client("sts").get_caller_identity()["Account"]
@@ -258,8 +419,12 @@ def main():
         refresh(session, state)
     elif args.action == "configure":
         configure(session, state)
-    else:
+    elif args.action == "commands":
         command_status(session, state)
+    elif args.action == "frontend":
+        frontend(session, state)
+    else:
+        gateway(session, state)
 
 
 if __name__ == "__main__":
