@@ -28,7 +28,7 @@ Revision en lectura del 25-11-2026, region Norte de Virginia (`us-east-1`).
    POST pedidos/lote y GET analitica/recomendaciones. Las integraciones HTTP
    proxy usan el VPC Link `p360-ep6-link` (`AVAILABLE`) y el ALB interno.
    En EC2 > Balanceadores, mostrar las reglas y sus grupos de destino.
-3. **Autorizacion:** la unica ruta configurada sin JWT es GET
+3. **Autorizacion:** hay 33 rutas; 32 estan protegidas. La unica sin JWT es GET
    `/api/v1/public`. Las otras requieren el autorizador Microsoft-Entra;
    lectura usa `pedidos.read` y escritura, `pedidos.write`.
    Mostrar issuer Entra v2, audience de la API, cabecera Authorization y
@@ -40,8 +40,14 @@ Revision en lectura del 25-11-2026, region Norte de Virginia (`us-east-1`).
 5. **Red:** solo se permiten conexiones entrantes publicas a los puertos
    80/443 del frontend. Backend y brokers estan limitados por security groups
    referenciados; los paneles se consultan por HTTPS con autenticacion.
-   Las EC2 requieren IMDSv2. El perfil `LabInstanceProfile` es del laboratorio,
-   no un rol de clientes de la aplicacion.
+   Las EC2 requieren IMDSv2. El perfil compartido `LabInstanceProfile`
+   usa `LabRole`, con politicas administradas del laboratorio y SSM. No es un
+   rol de clientes de la aplicacion ni se verifico como minimo privilegio.
+   El stage no tiene access logs configurados. No se cambiaron IAM ni los
+   security groups durante la revision.
+
+Pruebas HTTP: ruta publica 200, productos y checkout sin JWT 401. El preflight
+del frontend recibe `Access-Control-Allow-Origin`; otro origen no la recibe.
 
 **Respuesta corta:** "Hay dos direcciones, no dos Gateways. Una abre la web;
 la otra recibe las llamadas HTTP con el access token. En Red/Network se ve
