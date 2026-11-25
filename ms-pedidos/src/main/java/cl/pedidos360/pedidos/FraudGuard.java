@@ -1,5 +1,6 @@
 package cl.pedidos360.pedidos;
 
+import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,8 +42,7 @@ public class FraudGuard {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Estado de fraude no disponible");
         }
         if (status.bloqueado()) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
-                    "Tarjeta de prueba bloqueada por intentos de pago reiterados");
+            throw new PaymentBlockedException(status.bloqueadoHasta());
         }
         if ("RECHAZADO_SIMULADO".equals(status.estado())) {
             throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Pago de prueba rechazado");
@@ -52,5 +52,16 @@ public class FraudGuard {
         }
     }
 
-    public record Status(Boolean bloqueado, String estado) { }
+    public record Status(Boolean bloqueado, String estado, Instant bloqueadoHasta) { }
+
+    static class PaymentBlockedException extends ResponseStatusException {
+        private final Instant retryAt;
+
+        PaymentBlockedException(Instant retryAt) {
+            super(HttpStatus.TOO_MANY_REQUESTS, "Bloqueo preventivo por intentos de pago repetidos");
+            this.retryAt = retryAt;
+        }
+
+        Instant retryAt() { return retryAt; }
+    }
 }

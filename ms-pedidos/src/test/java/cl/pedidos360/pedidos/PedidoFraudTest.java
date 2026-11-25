@@ -10,6 +10,26 @@ import org.springframework.web.server.ResponseStatusException;
 
 class PedidoFraudTest {
     private static final String DEMO_CARD = "0000000000000001";
+
+    @Test
+    void checkoutBlockReturnsRetryTimeWithoutPublishingAnOrder() {
+        var guard = mock(FraudGuard.class);
+        var publisher = mock(PedidoPublisher.class);
+        var jwt = mock(Jwt.class);
+        when(jwt.getTokenValue()).thenReturn("test-token");
+        var deadline = java.time.Instant.now().plusSeconds(45);
+        doThrow(new FraudGuard.PaymentBlockedException(deadline)).when(guard)
+                .verificar("test-token", java.math.BigDecimal.TEN, DEMO_CARD);
+        var controller = new PedidoController(mock(PedidoRepository.class), publisher, guard);
+        var item = new NuevoPedidoRequest(1L, 1L, 1, java.math.BigDecimal.TEN, null, null);
+        var request = new PedidoController.Compra(java.util.List.of(item), DEMO_CARD);
+        var blocked = assertThrows(FraudGuard.PaymentBlockedException.class, () -> controller.crearLote(request, jwt));
+        var response = controller.pagoBloqueado(blocked);
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+        assertEquals(deadline, response.getBody().getProperties().get("bloqueadoHasta"));
+        org.junit.jupiter.api.Assertions.assertNotNull(response.getHeaders().getFirst("Retry-After"));
+        verifyNoInteractions(publisher);
+    }
     @Test
     void blockedUserCannotPublishOrder() {
         FraudGuard guard = mock(FraudGuard.class);

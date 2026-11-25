@@ -19,11 +19,13 @@ El [guion de ocho minutos](DEMO_EP6_AWS.md) lista las consolas, direcciones y pa
    es una boleta fiscal y el pago es simulado; no digas que integra Webpay.
    En **Analitica > Para ti**, revisa los complementos por nombre, imagen y precio.
 4. Prueba el fraude al final con `0000 0000 0000 0002`. Agrega un producto al
-   carrito, escribe el numero y pulsa **Pagar pedido** cuatro veces dentro de
-   diez segundos, esperando cada respuesta: 402, 402, 402 y 429.
-   No se vacia el carrito ni se emite un comprobante. El bloqueo dura 30 minutos
-   para ese numero en todas las cuentas. Para ensayar y luego presentar puedes
-   usar terminaciones pares distintas (2, 4, 6 u 8); no uses tarjetas reales.
+   carrito, escribe el numero y pulsa **Pagar pedido** tres veces dentro de
+   diez segundos, esperando cada respuesta: 402, 402 y 429. Este umbral de demo
+   es mas estricto que el cuarto intento del enunciado.
+   La alerta muestra la hora para reintentar. No se vacia el carrito ni se
+   emite un comprobante. El bloqueo dura 60 segundos para esa tarjeta. Con una
+   tarjeta que aprueba, usar el request 04 de Postman para evitar tener que
+   volver a llenar el carrito: 200, 200 y 429 con `0000000000000001`.
 5. Anota el resultado de cada paso. Si algo falla, registra la ruta, hora
    y codigo HTTP en Red/Network, sin capturar Authorization ni el JWT.
 

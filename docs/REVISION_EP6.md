@@ -5,7 +5,7 @@
 | Punto del enunciado | Implementacion |
 | --- | --- |
 | Pago simulado o Webpay | Simulacion en Carrito. No cobra ni usa Webpay. Solo se aceptan nueve numeros ficticios `0000 0000 0000 0001` a `0000 0000 0000 0009`. |
-| Mas de tres usos de una tarjeta en 10 s | Cuarto intento: 429 y alerta. Contador por HMAC de la tarjeta, no por cuenta. El numero no se registra en BD, Kafka o logs. |
+| Mas de tres usos de una tarjeta en 10 s | La demo usa un umbral mas estricto a pedido de la usuaria: 429 desde el tercer intento en 10 s, con alerta y bloqueo de 60 s. El criterio literal del enunciado se activa en el cuarto. Contador por HMAC de la tarjeta, no por cuenta. El numero no se registra en BD, Kafka o logs. |
 | Eventos y recomendaciones | Productos publica vistas; las selecciones del Carrito Angular se publican por el endpoint de interacciones de Productos. Usan `product-views`. Analytics consume el historial y recomienda por categoria o complemento segun la ultima interaccion. |
 | Microservicio libre | Auditoria registra eventos de orden desde RabbitMQ. |
 | Extras | No se implementaron Webpay, DynamoDB ni WebSockets. Las metricas de Analitica se consultan por HTTP. |

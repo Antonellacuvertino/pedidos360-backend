@@ -41,11 +41,11 @@ public class PaymentService {
     @Transactional
     public PagoResponse simular(PagoRequest request, String usuarioId) {
         var tarjeta = TarjetaPrueba.validar(request.tarjetaPrueba());
-        Instant now = Instant.now();
         String fingerprint = fingerprint(tarjeta);
         repository.ensureExists(fingerprint);
         PaymentVelocity velocity = repository.findById(fingerprint)
                 .orElseGet(() -> new PaymentVelocity(fingerprint));
+        Instant now = Instant.now();
         boolean accepted = velocity.registerAttempt(now);
         repository.save(velocity);
 
@@ -65,11 +65,11 @@ public class PaymentService {
             log.warn("Intento de pago bloqueado. eventId={}", eventId);
         }
         String mensaje = switch (status) {
-            case "BLOQUEADO" -> "Tarjeta de prueba bloqueada por 30 minutos";
+            case "BLOQUEADO" -> "Bloqueo preventivo por intentos de pago repetidos";
             case "RECHAZADO_SIMULADO" -> "Pago de prueba rechazado";
             default -> "Pago de prueba aprobado; no se cobro dinero";
         };
-        return new PagoResponse(eventId, status, mensaje, now);
+        return new PagoResponse(eventId, status, mensaje, now, accepted ? null : velocity.getBlockedUntil());
     }
 
     @Transactional

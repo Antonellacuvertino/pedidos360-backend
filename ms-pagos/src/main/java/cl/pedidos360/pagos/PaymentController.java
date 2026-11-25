@@ -1,5 +1,6 @@
 package cl.pedidos360.pagos;
 
+import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,12 +46,12 @@ public class PaymentController {
     public Autorizacion autorizar(@Valid @RequestBody Compra request, @AuthenticationPrincipal Jwt jwt) {
         PagoResponse response = service.simular(new PagoRequest(usuario(jwt), java.util.UUID.randomUUID().toString(),
                 request.monto(), request.tarjetaPrueba()), usuario(jwt));
-        return new Autorizacion("BLOQUEADO".equals(response.estado()), response.estado());
+        return new Autorizacion("BLOQUEADO".equals(response.estado()), response.estado(), response.bloqueadoHasta());
     }
 
     public record Compra(@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive
             java.math.BigDecimal monto, @jakarta.validation.constraints.NotBlank String tarjetaPrueba) { }
-    public record Autorizacion(boolean bloqueado, String estado) { }
+    public record Autorizacion(boolean bloqueado, String estado, Instant bloqueadoHasta) { }
 
     private String usuario(Jwt jwt) {
         return jwt.getIssuer() + ":" + (jwt.getClaimAsString("oid") != null

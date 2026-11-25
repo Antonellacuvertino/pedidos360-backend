@@ -1,11 +1,16 @@
 package cl.pedidos360.pedidos;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,4 +60,17 @@ public class PedidoController {
 
     public record Compra(@jakarta.validation.constraints.NotEmpty @jakarta.validation.constraints.Size(max = 50)
             List<@jakarta.validation.constraints.NotNull @Valid NuevoPedidoRequest> items, String tarjetaPrueba) { }
+
+    @ExceptionHandler(FraudGuard.PaymentBlockedException.class)
+    ResponseEntity<ProblemDetail> pagoBloqueado(FraudGuard.PaymentBlockedException exception) {
+        var body = exception.getBody();
+        body.setTitle("Alerta de posible fraude");
+        var response = ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS);
+        if (exception.retryAt() != null) {
+            var remaining = Duration.between(Instant.now(), exception.retryAt());
+            body.setProperty("bloqueadoHasta", exception.retryAt());
+            response.header(HttpHeaders.RETRY_AFTER, Long.toString(Math.max(0, remaining.plusMillis(999).toSeconds())));
+        }
+        return response.body(body);
+    }
 }

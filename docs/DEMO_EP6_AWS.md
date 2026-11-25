@@ -100,9 +100,9 @@ real hasta configurarlo y comprobar recepcion. El comprobante no es una boleta f
    Decir: "Kafka conserva eventos. analytics los procesa y calcula recomendaciones;
    Kafka no recomienda productos por si solo".
 5. **4:15-5:30, fraude.** Agregar otro producto e introducir `0000 0000 0000 0002`
-   en Carrito. Enviar cuatro pagos en menos de 10 segundos: 402, 402, 402 y 429.
-   Comprobar que no se crea una orden. El bloqueo de 30 minutos corresponde
-   a esa tarjeta ficticia, no a la cuenta; recargar no lo borra.
+   en Carrito. Enviar tres pagos en menos de 10 segundos: 402, 402 y 429.
+   Mostrar la alerta con la hora de reintento. El bloqueo de 60 segundos es
+   por tarjeta; no se crea una orden. Este umbral es mas estricto que el enunciado.
 6. **5:30-6:30, RabbitMQ.** Overview muestra dos nodos. Queues muestra orders,
    notifications, stock y audit con sus DLQ. Exchanges muestra orders.exchange (topic),
    notifications.exchange (direct) y dlx.exchange (direct). Mostrar actividad tras la compra.
@@ -140,7 +140,7 @@ Seleccionar entorno **Pedidos360 EP6 AWS**. Copiar el access token de Mi cuenta 
 
 - Coleccion general: GET publico, GET sin token, GET protegido, productos y pedidos.
 - Coleccion EP5: 01 detalle, 02 metricas, 03 recomendaciones.
-- Ejecutar 04 cuatro veces en menos de 10 segundos con la misma tarjeta; luego 12
+- Ejecutar 04 tres veces en menos de 10 segundos con la misma tarjeta; luego 12
   (estado de la tarjeta) y 13 (compra bloqueada).
 - Una tarjeta ya bloqueada devolvera 429 desde el primer intento. No borrar la BD;
   usa otra terminacion par para un nuevo ensayo.

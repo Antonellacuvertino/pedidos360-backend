@@ -10,6 +10,10 @@ import jakarta.persistence.Id;
 
 @Entity
 public class PaymentVelocity {
+    private static final int WINDOW_SECONDS = 10;
+    private static final int BLOCK_ON_ATTEMPT = 3;
+    private static final int BLOCK_SECONDS = 60;
+
     @Id
     private String fingerprint;
     private int attempts;
@@ -38,12 +42,12 @@ public class PaymentVelocity {
             recentAttempts.clear();
             blockedUntil = null;
         }
-        recentAttempts.removeIf(attempt -> !attempt.isAfter(now.minusSeconds(10)));
+        recentAttempts.removeIf(attempt -> !attempt.isAfter(now.minusSeconds(WINDOW_SECONDS)));
         recentAttempts.add(now);
         attempts = recentAttempts.size();
         windowStartedAt = recentAttempts.get(0);
-        if (attempts > 3) {
-            blockedUntil = now.plusSeconds(1800);
+        if (attempts >= BLOCK_ON_ATTEMPT) {
+            blockedUntil = now.plusSeconds(BLOCK_SECONDS);
             return false;
         }
         return true;

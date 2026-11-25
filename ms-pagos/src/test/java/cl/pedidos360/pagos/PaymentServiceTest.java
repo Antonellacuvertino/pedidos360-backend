@@ -23,7 +23,7 @@ import cl.pedidos360.streaming.PaymentAttemptEvent;
 
 class PaymentServiceTest {
     @Test
-    void fourthAttemptBlocksTheSameCardAcrossUsersButNotOtherCards() {
+    void twoApprovalsAndTheThirdAttemptBlocksThisCardAcrossUsersButNotOtherCards() {
         PaymentVelocityRepository repository = mock(PaymentVelocityRepository.class);
         var cards = new java.util.HashMap<String, PaymentVelocity>();
         when(repository.findById(anyString())).thenAnswer(call -> Optional.ofNullable(cards.get(call.getArgument(0))));
@@ -33,14 +33,16 @@ class PaymentServiceTest {
             return velocity;
         });
         PaymentService service = new PaymentService(repository, null, "test-pepper", false);
-        PagoRequest first = new PagoRequest("client-a", "order-1", BigDecimal.TEN, "0000000000000002");
-        PagoRequest changed = new PagoRequest("client-b", "order-2", BigDecimal.TEN, "0000000000000002");
-        for (int i = 0; i < 3; i++) {
-            assertThat(service.simular(first, "user-a").estado()).isEqualTo("RECHAZADO_SIMULADO");
+        PagoRequest first = new PagoRequest("client-a", "order-1", BigDecimal.TEN, "0000000000000001");
+        PagoRequest changed = new PagoRequest("client-b", "order-2", BigDecimal.TEN, "0000000000000001");
+        for (int i = 0; i < 2; i++) {
+            assertThat(service.simular(first, "user-a").estado()).isEqualTo("APROBADO_SIMULADO");
         }
-        assertThat(service.simular(changed, "user-b").estado()).isEqualTo("BLOQUEADO");
+        var blocked = service.simular(changed, "user-b");
+        assertThat(blocked.estado()).isEqualTo("BLOQUEADO");
+        assertThat(blocked.bloqueadoHasta()).isEqualTo(blocked.fecha().plusSeconds(60));
         assertThat(service.estado(first.tarjetaPrueba()).bloqueado()).isTrue();
-        var other = new PagoRequest("client-a", "order-3", BigDecimal.TEN, "0000000000000001");
+        var other = new PagoRequest("client-a", "order-3", BigDecimal.TEN, "0000000000000003");
         assertThat(service.simular(other, "user-a").estado()).isEqualTo("APROBADO_SIMULADO");
         assertThat(service.estado(other.tarjetaPrueba()).bloqueado()).isFalse();
         assertThat(cards).hasSize(2);

@@ -36,7 +36,7 @@
       }
     },
     {
-      "name": "04 POST pago simulado - cuarto intento en 10 segundos bloquea tarjeta",
+      "name": "04 POST pago simulado - tercer intento en 10 segundos bloquea tarjeta",
       "request": {
         "method": "POST",
         "header": [
