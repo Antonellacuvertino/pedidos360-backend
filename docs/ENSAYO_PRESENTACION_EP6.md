@@ -13,13 +13,17 @@ El [guion de ocho minutos](DEMO_EP6_AWS.md) lista las consolas, direcciones y pa
 2. Con el carrito vacio, agrega el Notebook Lenovo. Debajo del catalogo
    busca **Para ti**. Un mouse o monitor disponible complementa al notebook;
    no se repite el notebook ni se ofrecen articulos que ya estan en el carrito.
-3. Confirma una compra de prueba y registra si aparece el comprobante.
+3. En **Carrito > Pago de prueba**, usa **Tarjeta aprobada** y presiona
+   **Pagar pedido**. Solo entonces se crea la solicitud y aparece el comprobante.
    En el dashboard, verifica que luego aparezca el pedido. El comprobante no
    es una boleta fiscal y el pago es simulado; no digas que integra Webpay.
+   En **Analitica > Para ti**, revisa los complementos por nombre, imagen y precio.
 4. Prueba el fraude al final con una cuenta de demo sin bloqueo y al menos
-   10 segundos despues de la ultima compra. En Postman, envia tres intentos
-   en menos de 10 segundos: espera 200, 200 y 429. Luego muestra el estado
-   bloqueado y el rechazo de una compra. No uses tu cuenta principal para
+   10 segundos despues de la ultima compra. Agrega un producto nuevo al carrito
+   y elige **Tarjeta rechazada**. Pulsa **Pagar pedido** y reintenta cuando
+   termine cada solicitud: en menos de 10 segundos deben verse 402, 402 y 429.
+   No se vacia el carrito ni se emite un comprobante. Cambiar a **Tarjeta aprobada**
+   no evita el bloqueo. No uses tu cuenta principal para
    probar antes de presentar: el bloqueo dura 30 minutos.
 5. Anota el resultado de cada paso. Si algo falla, registra la ruta, hora
    y codigo HTTP en Red/Network, sin capturar Authorization ni el JWT.
@@ -34,7 +38,7 @@ copiar la clave descrito en [la guia AWS](DEMO_EP6_AWS.md#direcciones).
 | Overview / Brokers | 3 brokers y controlador ZooKeeper | "Estos brokers distribuyen los lideres y guardan replicas. Comparten una EC2 de laboratorio, asi que no hay tolerancia a la perdida de ese host". |
 | Topics | `product-views` y `payment-attempts`, cada uno con 3 particiones y RF 3 | "Son los dos flujos del negocio. Los sufijos -dlt identifican destinos de errores, no flujos nuevos". |
 | product-views > Messages | Un evento CARRITO de tu prueba, con key, partition y offset | "Productos publica la seleccion. Analytics la consume y consulta el catalogo para sugerir un complemento en stock". |
-| payment-attempts > Messages | Eventos de los intentos de pago | "Kafka conserva el historial; el bloqueo ocurre antes de confirmar la orden, en Pagos y PostgreSQL". |
+| payment-attempts > Messages | Estados APROBADO_SIMULADO, RECHAZADO_SIMULADO y BLOQUEADO | "Kafka conserva el historial; el bloqueo ocurre antes de confirmar la orden, en Pagos y PostgreSQL". |
 | Consumer Groups | `analytics-product-views` y `analytics-payment-attempts`, offsets y lag | "El offset marca el progreso por particion. El lag es la diferencia con el final del registro". |
 | Topics / Postman Admin | Crear un topico demo con 3 particiones y RF 3, ajustar retencion y eliminar solo ese topico | "Kafka Admin permite modificar configuracion; Operador no tiene permiso de escritura administrativa". |
 

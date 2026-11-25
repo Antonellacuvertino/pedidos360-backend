@@ -1,6 +1,7 @@
 package cl.pedidos360.pedidos;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -30,8 +31,22 @@ class PedidoFraudTest {
         when(jwt.getTokenValue()).thenReturn("test-token");
         PedidoController controller = new PedidoController(mock(PedidoRepository.class), publisher, guard);
         NuevoPedidoRequest item = new NuevoPedidoRequest(1L, 1L, 1, java.math.BigDecimal.TEN, null, null);
-        controller.crearLote(new PedidoController.Compra(java.util.List.of(item, item, item)), jwt);
+        controller.crearLote(new PedidoController.Compra(java.util.List.of(item, item, item), false), jwt);
         verify(guard).verificar("test-token", java.math.BigDecimal.valueOf(30));
         verify(publisher, times(3)).publicar(item);
+    }
+
+    @Test
+    void declinedPaymentCountsWithoutPublishingAnOrder() {
+        FraudGuard guard = mock(FraudGuard.class);
+        PedidoPublisher publisher = mock(PedidoPublisher.class);
+        Jwt jwt = mock(Jwt.class);
+        when(jwt.getTokenValue()).thenReturn("test-token");
+        var controller = new PedidoController(mock(PedidoRepository.class), publisher, guard);
+        var item = new NuevoPedidoRequest(1L, 1L, 1, java.math.BigDecimal.TEN, null, null);
+        var request = new PedidoController.Compra(java.util.List.of(item), true);
+        assertEquals(HttpStatus.PAYMENT_REQUIRED, controller.crearLote(request, jwt).getStatusCode());
+        verify(guard).verificar("test-token", java.math.BigDecimal.TEN, true);
+        verifyNoInteractions(publisher);
     }
 }

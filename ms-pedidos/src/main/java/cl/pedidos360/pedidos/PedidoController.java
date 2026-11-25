@@ -48,11 +48,15 @@ public class PedidoController {
             @AuthenticationPrincipal Jwt jwt) {
         var total = request.items().stream().map(NuevoPedidoRequest::total)
                 .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        if (request.rechazoSimulado()) {
+            fraudGuard.verificar(jwt.getTokenValue(), total, true);
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).build();
+        }
         fraudGuard.verificar(jwt.getTokenValue(), total);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(request.items().stream().map(publisher::publicar).toList());
     }
 
     public record Compra(@jakarta.validation.constraints.NotEmpty @jakarta.validation.constraints.Size(max = 50)
-            List<@jakarta.validation.constraints.NotNull @Valid NuevoPedidoRequest> items) { }
+            List<@jakarta.validation.constraints.NotNull @Valid NuevoPedidoRequest> items, boolean rechazoSimulado) { }
 }

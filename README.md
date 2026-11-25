@@ -148,7 +148,7 @@ Los consumidores usan ACK manual. Cuando el proceso termina se ejecuta `basicAck
 
 1. Angular envia `POST /api/v1/pedidos/lote` con JWT para confirmar el carrito.
 2. API Gateway valida el JWT y el scope `pedidos.write`; `ms-pedidos` valida otra vez firma, issuer, audience y vigencia.
-3. `ms-pedidos` consulta `ms-pagos` antes de publicar. Tres intentos en una ventana movil de 10 segundos bloquean al usuario por 30 minutos: responde 429 sin publicar la compra. Si pasa el control, publica `order.created` y responde `202 Accepted`.
+3. `ms-pedidos` consulta `ms-pagos` antes de publicar. Tres intentos en una ventana movil de 10 segundos bloquean al usuario por 30 minutos: responde 429 sin publicar la compra. Una tarjeta rechazada (`rechazoSimulado: true`) da 402, cuenta en el limite y no crea orden. Un pago de prueba aprobado publica `order.created` y responde `202 Accepted`.
 4. `orders.queue` guarda la orden.
 5. `stock.queue` descuenta inventario.
 6. `notifications.queue` envia o simula el correo.

@@ -21,6 +21,19 @@ import cl.pedidos360.streaming.PaymentAttemptEvent;
 
 class PaymentServiceTest {
     @Test
+    void twoRejectedCheckoutsCountAndThirdBlocks() {
+        var repository = mock(PaymentVelocityRepository.class);
+        var velocity = new PaymentVelocity("test");
+        when(repository.findById(anyString())).thenReturn(Optional.of(velocity));
+        var service = new PaymentService(repository, null, "test-pepper", false);
+        var checkout = new PagoRequest("demo", "order-1", BigDecimal.TEN, "demo_checkout");
+        assertThat(service.simular(checkout, "user", true).estado()).isEqualTo("RECHAZADO_SIMULADO");
+        assertThat(service.simular(checkout, "user", true).estado()).isEqualTo("RECHAZADO_SIMULADO");
+        assertThat(service.simular(checkout, "user", true).estado()).isEqualTo("BLOQUEADO");
+        assertThat(service.estado("user").bloqueado()).isTrue();
+    }
+
+    @Test
     void changingClientOrCardDoesNotBypassAuthenticatedUserBlock() {
         PaymentVelocityRepository repository = mock(PaymentVelocityRepository.class);
         @SuppressWarnings("unchecked")

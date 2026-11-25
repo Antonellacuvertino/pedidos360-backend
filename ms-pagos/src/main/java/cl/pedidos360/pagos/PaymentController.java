@@ -40,12 +40,12 @@ public class PaymentController {
     @PreAuthorize("hasAuthority('SCOPE_pedidos.write') or hasAnyRole('Pedidos.Admin','Pedidos.Operador')")
     public PaymentService.FraudStatus autorizar(@Valid @RequestBody Compra request, @AuthenticationPrincipal Jwt jwt) {
         PagoResponse response = service.simular(new PagoRequest(usuario(jwt), java.util.UUID.randomUUID().toString(),
-                request.monto(), "demo_checkout"), usuario(jwt));
+                request.monto(), "demo_checkout"), usuario(jwt), request.rechazoSimulado());
         return new PaymentService.FraudStatus("BLOQUEADO".equals(response.estado()), null);
     }
 
     public record Compra(@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive
-            java.math.BigDecimal monto) { }
+            java.math.BigDecimal monto, boolean rechazoSimulado) { }
 
     private String usuario(Jwt jwt) {
         return jwt.getIssuer() + ":" + (jwt.getClaimAsString("oid") != null

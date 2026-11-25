@@ -93,13 +93,15 @@ real hasta configurarlo y comprobar recepcion. El comprobante no es una boleta f
    token y 200 con access token. En Entra mostrar usuarios, roles y registro SPA.
 3. **1:45-3:00, recomendaciones y compra.** Entrar con Microsoft, abrir Productos,
    agregar un notebook al carrito y esperar unos segundos. Mostrar **Para ti**
-   debajo del catalogo y confirmar el pedido. Hacer esto ANTES del fraude.
+   debajo del catalogo y confirmar el pedido con **Tarjeta aprobada** en Carrito.
+   Hacer esto ANTES del fraude.
 4. **3:00-4:15, Kafka UI.** Abrir Topics: `payment-attempts` y `product-views`.
    Mostrar tres particiones, RF=3, ISR, mensajes, key, offset y los grupos de consumidores.
    Decir: "Kafka conserva eventos. analytics los procesa y calcula recomendaciones;
    Kafka no recomienda productos por si solo".
-5. **4:15-5:30, fraude.** En Streaming o Postman enviar tres pagos en menos de 10 segundos.
-   El tercero debe devolver 429. Consultar el estado, intentar comprar y comprobar que
+5. **4:15-5:30, fraude.** Agregar otro producto y elegir **Tarjeta rechazada** en
+   Carrito. Enviar tres pagos en menos de 10 segundos: 402, 402 y 429.
+   Consultar el estado, intentar con tarjeta aprobada y comprobar que
    no se crea una orden. El bloqueo dura 30 minutos; cambiar de pestana o recargar no lo borra.
 6. **5:30-6:30, RabbitMQ.** Overview muestra dos nodos. Queues muestra orders,
    notifications, stock y audit con sus DLQ. Exchanges muestra orders.exchange (topic),

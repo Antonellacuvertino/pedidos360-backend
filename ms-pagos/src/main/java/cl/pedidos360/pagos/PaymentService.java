@@ -39,6 +39,11 @@ public class PaymentService {
 
     @Transactional
     public PagoResponse simular(PagoRequest request, String usuarioId) {
+        return simular(request, usuarioId, false);
+    }
+
+    @Transactional
+    public PagoResponse simular(PagoRequest request, String usuarioId, boolean rechazoSimulado) {
         Instant now = Instant.now();
         String fingerprint = fingerprint("usuario:" + usuarioId);
         repository.ensureExists(fingerprint);
@@ -47,7 +52,7 @@ public class PaymentService {
         boolean accepted = velocity.registerAttempt(now);
         repository.save(velocity);
 
-        String status = accepted ? "APROBADO_SIMULADO" : "BLOQUEADO";
+        String status = !accepted ? "BLOQUEADO" : rechazoSimulado ? "RECHAZADO_SIMULADO" : "APROBADO_SIMULADO";
         UUID eventId = UUID.randomUUID();
         PaymentAttemptEvent event = new PaymentAttemptEvent(
                 eventId, usuarioId, fingerprint(request.metodoPagoToken()), request.monto(), status, now);
@@ -62,8 +67,12 @@ public class PaymentService {
         if (!accepted) {
             log.warn("Intento de pago bloqueado. eventId={} clienteId={}", eventId, request.clienteId());
         }
-        return new PagoResponse(eventId, status,
-                accepted ? "Pago de prueba aprobado; no se cobro dinero" : "Usuario bloqueado por 30 minutos", now);
+        String mensaje = switch (status) {
+            case "BLOQUEADO" -> "Usuario bloqueado por 30 minutos";
+            case "RECHAZADO_SIMULADO" -> "Pago de prueba rechazado";
+            default -> "Pago de prueba aprobado; no se cobro dinero";
+        };
+        return new PagoResponse(eventId, status, mensaje, now);
     }
 
     @Transactional

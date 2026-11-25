@@ -24,11 +24,16 @@ public class FraudGuard {
     FraudGuard(RestClient client) { this.client = client; }
 
     public void verificar(String accessToken, java.math.BigDecimal monto) {
+        verificar(accessToken, monto, false);
+    }
+
+    public void verificar(String accessToken, java.math.BigDecimal monto, boolean rechazoSimulado) {
         Status status;
         try {
             status = client.post().uri("/pagos/autorizar-compra")
                     .headers(headers -> headers.setBearerAuth(accessToken))
-                    .body(java.util.Map.of("monto", monto))
+                    .body(rechazoSimulado ? java.util.Map.of("monto", monto, "rechazoSimulado", true)
+                            : java.util.Map.of("monto", monto))
                     .retrieve().body(Status.class);
         } catch (RestClientException exception) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
