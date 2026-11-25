@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "Pedidos360 EP6",
+    "description": "Pruebas de la API en AWS. Selecciona el entorno Pedidos360 EP6 AWS. Ejecuta cada solicitud por separado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Demostración",
+      "item": [
+        {
+          "name": "01 Público",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/public",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "02 Productos sin token",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/productos",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "03 Productos con token",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/productos"
+          }
+        },
+        {
+          "name": "04 Detalle de producto",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/productos/{{producto_id}}"
+          }
+        },
+        {
+          "name": "05 Recomendaciones",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/analitica/recomendaciones"
+          }
+        },
+        {
+          "name": "06 Pago simulado",
+          "request": {
+            "method": "POST",
+            "url": "{{api_gateway_url}}/api/v1/pagos/simular",
+            "description": "No crea pedidos. Con una terminación impar, tres intentos de la misma tarjeta en menos de 10 segundos deben responder 200, 200 y 429. Haz primero la compra de prueba si vas a usar la misma tarjeta.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"demo-ep6\",\n  \"pedidoId\": \"demo-pago\",\n  \"monto\": 1000,\n  \"tarjetaPrueba\": \"000000000000000{{tarjeta_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "07 Estado de tarjeta",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/pagos/estado?tarjeta={{tarjeta_id}}"
+          }
+        },
+        {
+          "name": "08 Métricas",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/analitica/resumen"
+          }
+        },
+        {
+          "name": "09 Pedidos recibidos",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/pedidos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mensajería",
+      "item": [
+        {
+          "name": "Tópicos Kafka",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/kafka/topics"
+          }
+        },
+        {
+          "name": "Detalle de product-views",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/kafka/topics/product-views"
+          }
+        },
+        {
+          "name": "Grupos consumidores",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/kafka/groups"
+          }
+        },
+        {
+          "name": "Offsets de analítica",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/kafka/groups/analytics-product-views/offsets"
+          }
+        },
+        {
+          "name": "Colas RabbitMQ",
+          "request": {
+            "method": "GET",
+            "url": "{{api_gateway_url}}/api/v1/rabbitmq/queues"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Administración Kafka",
+      "item": [
+        {
+          "name": "Crear tópico de demo",
+          "request": {
+            "method": "POST",
+            "url": "{{api_gateway_url}}/api/v1/kafka/topics",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{demo_topic}}\",\n  \"partitions\": 3,\n  \"replicationFactor\": 3,\n  \"retentionMs\": 86400000,\n  \"cleanupPolicy\": \"delete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cambiar retención del tópico de demo",
+          "request": {
+            "method": "PUT",
+            "url": "{{api_gateway_url}}/api/v1/kafka/topics/{{demo_topic}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partitions\": 3,\n  \"retentionMs\": 172800000,\n  \"cleanupPolicy\": \"delete\",\n  \"minInSyncReplicas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar tópico de demo",
+          "request": {
+            "method": "DELETE",
+            "url": "{{api_gateway_url}}/api/v1/kafka/topics/{{demo_topic}}"
+          }
+        }
+      ]
+    }
+  ]
+}
